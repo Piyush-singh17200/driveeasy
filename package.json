@@ -1,0 +1,19 @@
+{
+  "name": "driveeasy-carrental",
+  "version": "1.0.0",
+  "description": "Smart Car Rental Platform — Full Stack",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "seed": "cd server && node utils/seed.js",
+    "test": "cd server && npm test",
+    "setup": "npm run install:all && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #e94560;
+  --primary-dark: #b21644;
+  --accent: #f0a500;
+  --bg: #0a0a12;
+  --bg-card: #111122;
+  --bg-elevated: #16162a;
+  --text: #f0f0ff;
+  --text-muted: #8888aa;
+  --border: rgba(255,255,255,0.08);
+  --scrollbar-w: 6px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: var(--scrollbar-w); }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 99px; }
+
+/* Utility classes */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-semibold px-6 py-3 rounded-xl
+           transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+           active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply border border-white/10 hover:border-primary-500/50 hover:bg-primary-500/10 text-white
+           font-medium px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2;
+  }
+
+  .card {
+    @apply bg-dark-700 border border-white/5 rounded-2xl overflow-hidden;
+  }
+
+  .card-hover {
+    @apply card hover:border-primary-500/30 hover:shadow-card transition-all duration-300 cursor-pointer;
+  }
+
+  .input {
+    @apply bg-dark-600 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3
+           focus:outline-none focus:border-primary-500/60 focus:bg-dark-500 transition-all duration-200 w-full;
+  }
+
+  .label {
+    @apply text-sm font-medium text-white/70 mb-1 block;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-4xl font-bold;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent;
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    @apply bg-dark-500 rounded-lg animate-shimmer;
+    background: linear-gradient(90deg, #16162a 25%, #22224a 50%, #16162a 75%);
+    background-size: 200% 100%;
+  }
+}
+
+/* Number input no arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* Date picker dark theme overrides */
+.react-datepicker { background: #16162a !important; border-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
+.react-datepicker__header { background: #111122 !important; border-color: rgba(255,255,255,0.1) !important; }
+.react-datepicker__current-month, .react-datepicker__day-name, .react-datepicker-time__header { color: #fff !important; }
+.react-datepicker__day { color: #ccc !important; }
+.react-datepicker__day:hover { background: #e94560 !important; color: #fff !important; }
+.react-datepicker__day--selected { background: #e94560 !important; color: #fff !important; }
+.react-datepicker__day--disabled { color: #555 !important; }
+.react-datepicker__navigation-icon::before { border-color: #aaa !important; }

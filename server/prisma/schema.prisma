@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  bookingId       String   @unique
+  userId          String
+  amount          Float
+  currency        String   @default("INR")
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  stripeSessionId String?
+  method          String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("payments")
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  paymentId   String
+  type        TransactionType
+  amount      Float
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@map("transactions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  PAYOUT
+  FEE
+}

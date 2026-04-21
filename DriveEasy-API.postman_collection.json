@@ -1,0 +1,242 @@
+{
+  "info": {
+    "name": "DriveEasy API",
+    "description": "Smart Car Rental Platform — Complete API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["const res = pm.response.json();", "if (res.token) pm.collectionVariables.set('token', res.token);"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@demo.com\",\n  \"password\": \"Demo1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cars",
+      "item": [
+        {
+          "name": "Get All Cars",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/cars?city=Mumbai&category=SUV&minPrice=1000&maxPrice=5000&page=1&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["cars"],
+              "query": [
+                { "key": "city", "value": "Mumbai" },
+                { "key": "category", "value": "SUV" },
+                { "key": "minPrice", "value": "1000" },
+                { "key": "maxPrice", "value": "5000" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "12" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Car by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cars/{{carId}}"
+          }
+        },
+        {
+          "name": "Check Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/cars/availability?carId={{carId}}&startDate=2025-06-01&endDate=2025-06-05",
+              "query": [
+                { "key": "carId", "value": "{{carId}}" },
+                { "key": "startDate", "value": "2025-06-01" },
+                { "key": "endDate", "value": "2025-06-05" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Car Listing",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/cars",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Swift Test" },
+                { "key": "brand", "value": "Maruti" },
+                { "key": "model", "value": "Swift" },
+                { "key": "year", "value": "2023" },
+                { "key": "category", "value": "Hatchback" },
+                { "key": "transmission", "value": "Manual" },
+                { "key": "fuel", "value": "Petrol" },
+                { "key": "seats", "value": "5" },
+                { "key": "pricePerDay", "value": "1200" },
+                { "key": "location[city]", "value": "Mumbai" },
+                { "key": "location[state]", "value": "Maharashtra" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/bookings",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carId\": \"{{carId}}\",\n  \"startDate\": \"2025-06-10T00:00:00Z\",\n  \"endDate\": \"2025-06-15T00:00:00Z\",\n  \"specialRequests\": \"Child seat please\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/bookings?status=pending&page=1&limit=10",
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/bookings/{{bookingId}}/cancel",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"reason\": \"Change of plans\" }"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "AI Chat",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ai/chat",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I need an SUV under ₹3000/day in Mumbai for 5 people\",\n  \"conversationHistory\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Recommendations",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ai/recommendations",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"budget\": 3000,\n  \"location\": \"Mumbai\",\n  \"preferences\": { \"categories\": [\"SUV\", \"Sedan\"] }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/dashboard",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "Approve Car",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/admin/cars/{{carId}}/approve",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"approved\": true }"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
