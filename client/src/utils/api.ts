@@ -2,8 +2,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const api = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || '/api',
-  withCredentials: true,
+  baseURL: 'https://driveeasy-server.onrender.com/api',
+  withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
 });
 
