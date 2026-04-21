@@ -13,7 +13,7 @@ export const useSocket = () => {
     if (!isAuthenticated || !user) return;
 
     if (!socket) {
-      socket = io(import.meta.env.VITE_SOCKET_URL || '/', {
+      socket = io((import.meta as any).env?.VITE_SOCKET_URL || '/', {
         withCredentials: true,
         transports: ['websocket', 'polling'],
       });

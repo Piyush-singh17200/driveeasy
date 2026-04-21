@@ -57,7 +57,7 @@ export default function Cars() {
     const unsubscribe = onCarAvailabilityChange(({ carId, isAvailable }) => {
       setCars(prev => prev.map(car => car._id === carId ? { ...car, isAvailable } : car));
     });
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, [onCarAvailabilityChange]);
 
   const handleSearch = (e: React.FormEvent) => {

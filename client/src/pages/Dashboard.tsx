@@ -1,6 +1,7 @@
 import { useAuthStore } from '../store/authStore';
 import { Link } from 'react-router-dom';
 import { Car, Calendar, Star, User, LayoutDashboard, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 
 export function Dashboard() {
   const { user } = useAuthStore();
@@ -150,15 +151,8 @@ export function AdminDashboard() {
 
 export function Profile() {
   const { user, updateProfile } = useAuthStore();
-  const [form, setForm] = useState_profile(user);
-
-  function useState_profile(u: any) {
-    const [f, sf] = require('react').useState({ name: u?.name || '', phone: u?.phone || '', email: u?.email || '' });
-    return [f, sf] as [typeof f, typeof sf];
-  }
-
-  const [name, setName] = require('react').useState(user?.name || '');
-  const [phone, setPhone] = require('react').useState(user?.phone || '');
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
