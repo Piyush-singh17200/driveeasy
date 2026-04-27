@@ -10,12 +10,13 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
-
     if (!socket) {
-      socket = io((import.meta as any).env?.VITE_SOCKET_URL || '/', {
-        withCredentials: true,
+      socket = io('https://driveeasy-server.onrender.com', {
+        withCredentials: false,
         transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
       });
     }
 
@@ -23,12 +24,13 @@ export const useSocket = () => {
 
     socket.on('connect', () => {
       console.log('Socket connected:', socket?.id);
-      socket?.emit('join_user_room', user._id);
-      if (user.role === 'admin') socket?.emit('join_admin_room');
-      if (user.role === 'owner') socket?.emit('join_owner_room', user._id);
+      if (isAuthenticated && user) {
+        socket?.emit('join_user_room', user._id);
+        if (user.role === 'admin') socket?.emit('join_admin_room');
+        if (user.role === 'owner') socket?.emit('join_owner_room', user._id);
+      }
     });
 
-    // Booking notifications
     socket.on('booking_created', (data) => {
       toast.success(data.message || 'Booking created!', { duration: 5000 });
     });
@@ -76,7 +78,7 @@ export const useSocket = () => {
 
   const onCarAvailabilityChange = useCallback((callback: (data: any) => void) => {
     socket?.on('car_availability_changed', callback);
-    return () => socket?.off('car_availability_changed', callback);
+    return () => { socket?.off('car_availability_changed', callback); };
   }, []);
 
   return { socket: socketRef.current, watchCar, unwatchCar, onCarAvailabilityChange };

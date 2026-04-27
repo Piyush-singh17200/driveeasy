@@ -22,15 +22,16 @@ exports.createBooking = async (req, res, next) => {
       return res.status(400).json({ error: 'Start date cannot be in the past' });
     }
 
-    const conflict = await Booking.findOne({
-      car: carId,
-      status: { $in: ['confirmed', 'active'] },
-      $or: [{ startDate: { $lte: end }, endDate: { $gte: start } }],
-    });
+  const conflict = await Booking.findOne({
+  car: carId,
+  status: { $in: ['confirmed', 'active', 'pending'] },
+  startDate: { $lt: end },
+  endDate: { $gt: start },
+});
 
-    if (conflict) {
-      return res.status(409).json({ error: 'Car is already booked for selected dates' });
-    }
+if (conflict) {
+  return res.status(409).json({ error: 'Car is already booked for selected dates' });
+}
 
     const msPerDay = 1000 * 60 * 60 * 24;
     const totalDays = Math.ceil((end - start) / msPerDay);

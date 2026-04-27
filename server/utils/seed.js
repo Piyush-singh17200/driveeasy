@@ -58,7 +58,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 1200,
     location: { city: 'Mumbai', state: 'Maharashtra', address: 'Bandra West' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159999/swift-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
     ],
     features: ['AC', 'Bluetooth', 'Reverse Camera', 'Power Windows', 'ABS'],
     description: 'Brand new Swift with all modern features. Perfect for city drives.',
@@ -80,7 +80,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 3500,
     location: { city: 'Mumbai', state: 'Maharashtra', address: 'Andheri East' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/44709/innova-crysta-exterior-right-front-three-quarter-11.jpeg', isPrimary: true },
     ],
     features: ['AC', 'Leather Seats', 'Push Button Start', 'Rear AC', 'USB Ports', 'Captain Seats'],
     description: '7-seater premium MPV. Great for family trips and airport transfers.',
@@ -102,7 +102,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2800,
     location: { city: 'Bangalore', state: 'Karnataka', address: 'Koramangala' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1542362567-b07e54358753?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
     ],
     features: ['Panoramic Sunroof', 'Ventilated Seats', 'BOSE Sound', 'BlueLink', 'Lane Assist'],
     description: 'Top-spec Creta with panoramic sunroof and premium features.',
@@ -124,7 +124,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2200,
     location: { city: 'Pune', state: 'Maharashtra', address: 'Wakad' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/167485/nexon-ev-exterior-right-front-three-quarter.jpeg', isPrimary: true },
     ],
     features: ['400km Range', 'Fast Charging', 'Connected Car Tech', 'ADAS Suite', 'Harman Audio'],
     description: 'Go green with Nexon EV Max. 400km range on single charge.',
@@ -146,7 +146,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 8500,
     location: { city: 'Delhi', state: 'Delhi', address: 'Connaught Place' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/49645/5-series-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
     ],
     features: ['Leather Interior', 'Heads-Up Display', 'Parking Assistant', 'Ambient Lighting', 'Adaptive Cruise'],
     description: 'Experience ultimate luxury with the BMW 5 Series. Perfect for business travel.',
@@ -168,7 +168,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 3200,
     location: { city: 'Goa', state: 'Goa', address: 'Panjim' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/40087/thar-exterior-right-front-three-quarter-4.jpeg', isPrimary: true },
     ],
     features: ['4x4 Drive', 'Convertible', 'Snorkel', 'Off-Road Terrain', 'Rock Crawling Mode'],
     description: 'Perfect for Goa beach drives and off-road adventures!',
@@ -190,7 +190,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 1800,
     location: { city: 'Chennai', state: 'Tamil Nadu', address: 'Anna Nagar' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/134297/city-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
     ],
     features: ['Honda Sensing', 'Wireless Carplay', 'Heated Mirrors', 'LaneWatch', 'LKAS'],
     description: 'Reliable and fuel-efficient sedan with advanced safety features.',
@@ -212,7 +212,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2400,
     location: { city: 'Hyderabad', state: 'Telangana', address: 'Madhapur' },
     images: [
-      { url: 'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=800', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', isPrimary: true },
     ],
     features: ['10.25" Touchscreen', 'Bose Sound', 'ADAS', 'OTA Updates', 'Sunroof'],
     description: 'Feature-packed SUV with segment-best tech and comfort.',
@@ -228,81 +228,25 @@ async function seed() {
     console.log('🌱 Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected');
-
-    // Clear existing data
     console.log('🗑️  Clearing existing data...');
     await Promise.all([
       User.deleteMany({}),
       Car.deleteMany({}),
       Booking.deleteMany({}),
     ]);
-
-    // Create users
     console.log('👤 Creating users...');
     const users = await User.create(seedUsers);
-    const adminUser = users.find(u => u.role === 'admin');
     const ownerUsers = users.filter(u => u.role === 'owner');
-    const regularUser = users.find(u => u.role === 'user');
-
     console.log(`   ✅ Created ${users.length} users`);
-    console.log(`      Admin: admin@demo.com / Admin1234`);
-    console.log(`      Owner: owner@demo.com / Demo1234`);
-    console.log(`      User:  user@demo.com / Demo1234`);
-
-    // Create cars
     console.log('🚗 Creating cars...');
     const cars = await Car.create(seedCars([ownerUsers[0]._id, ownerUsers[1]._id]));
     console.log(`   ✅ Created ${cars.length} cars`);
-
-    // Create sample bookings
-    console.log('📋 Creating sample bookings...');
-    const sampleBookings = [
-      {
-        user: regularUser._id,
-        car: cars[0]._id,
-        startDate: new Date(Date.now() - 10 * 86400000),
-        endDate: new Date(Date.now() - 7 * 86400000),
-        totalDays: 3,
-        pricePerDay: cars[0].pricePerDay,
-        subtotal: 3 * cars[0].pricePerDay,
-        taxes: Math.round(3 * cars[0].pricePerDay * 0.18),
-        totalAmount: 3 * cars[0].pricePerDay + Math.round(3 * cars[0].pricePerDay * 0.18),
-        status: 'completed',
-        paymentStatus: 'paid',
-        review: { rating: 5, comment: 'Great car, smooth drive!', createdAt: new Date() },
-      },
-      {
-        user: regularUser._id,
-        car: cars[2]._id,
-        startDate: new Date(Date.now() + 5 * 86400000),
-        endDate: new Date(Date.now() + 8 * 86400000),
-        totalDays: 3,
-        pricePerDay: cars[2].pricePerDay,
-        subtotal: 3 * cars[2].pricePerDay,
-        taxes: Math.round(3 * cars[2].pricePerDay * 0.18),
-        totalAmount: 3 * cars[2].pricePerDay + Math.round(3 * cars[2].pricePerDay * 0.18),
-        status: 'confirmed',
-        paymentStatus: 'paid',
-      },
-    ];
-
-    const bookings = await Booking.create(sampleBookings);
-    console.log(`   ✅ Created ${bookings.length} bookings`);
-
-    console.log('\n🎉 Seed completed successfully!');
-    console.log('━'.repeat(50));
-    console.log('📊 Summary:');
-    console.log(`   Users:    ${users.length}`);
-    console.log(`   Cars:     ${cars.length}`);
-    console.log(`   Bookings: ${bookings.length}`);
-    console.log('━'.repeat(50));
-
+    console.log('🎉 Seed completed successfully!');
   } catch (error) {
     console.error('❌ Seed error:', error);
     throw error;
   } finally {
     await mongoose.disconnect();
-    console.log('🔌 Disconnected');
     process.exit(0);
   }
 }
