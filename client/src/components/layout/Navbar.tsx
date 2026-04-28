@@ -41,14 +41,14 @@ export default function Navbar() {
     await logout();
     navigate('/');
   };
-
-  const navLinks = [
-    { href: '/cars', label: 'Browse Cars' },
-    { href: '/cars?category=SUV', label: 'SUVs' },
-    { href: '/cars?category=Luxury', label: 'Luxury' },
-    { href: '/cars?category=Electric', label: 'Electric' },
-  ];
-
+const navLinks = [
+  { href: '/cars', label: 'Browse Cars' },
+  { href: '/cars?category=SUV', label: 'SUVs' },
+  { href: '/cars?category=Luxury', label: 'Luxury' },
+  { href: '/cars?category=Electric', label: 'Electric' },
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+];
   const dashboardLink = user?.role === 'admin' ? '/admin' : user?.role === 'owner' ? '/owner' : '/dashboard';
 
   return (

@@ -33,9 +33,16 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
   phone: {
-    type: String,
-    trim: true,
-  },
+  type: String,
+  trim: true,
+  validate: {
+    validator: function(v) {
+      if (!v) return true;
+      return /^[6-9]\d{9}$/.test(v);
+    },
+    message: 'Phone number must be 10 digits starting with 6-9'
+  }
+},
   address: {
     street: String,
     city: String,

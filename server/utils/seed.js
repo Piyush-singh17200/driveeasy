@@ -47,7 +47,7 @@ const seedUsers = [
 const seedCars = (ownerIds) => [
   {
     owner: ownerIds[0],
-    name: 'Swift Premium',
+    name: 'Maruti Suzuki Swift ZXi+',
     brand: 'Maruti Suzuki',
     model: 'Swift ZXi+',
     year: 2023,
@@ -58,7 +58,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 1200,
     location: { city: 'Mumbai', state: 'Maharashtra', address: 'Bandra West' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159999/swift-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
+      { url: '/cars/swift.png', isPrimary: true },
     ],
     features: ['AC', 'Bluetooth', 'Reverse Camera', 'Power Windows', 'ABS'],
     description: 'Brand new Swift with all modern features. Perfect for city drives.',
@@ -69,7 +69,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[0],
-    name: 'Innova Crysta Luxury',
+    name: 'Toyota Innova Crysta Luxury',
     brand: 'Toyota',
     model: 'Innova Crysta',
     year: 2022,
@@ -80,7 +80,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 3500,
     location: { city: 'Mumbai', state: 'Maharashtra', address: 'Andheri East' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/44709/innova-crysta-exterior-right-front-three-quarter-11.jpeg', isPrimary: true },
+      { url: '/cars/innova.png', isPrimary: true },
     ],
     features: ['AC', 'Leather Seats', 'Push Button Start', 'Rear AC', 'USB Ports', 'Captain Seats'],
     description: '7-seater premium MPV. Great for family trips and airport transfers.',
@@ -91,7 +91,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[1],
-    name: 'Creta Elite',
+    name: 'Hyundai Creta SX (Knight Edition)',
     brand: 'Hyundai',
     model: 'Creta SX',
     year: 2023,
@@ -102,7 +102,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2800,
     location: { city: 'Bangalore', state: 'Karnataka', address: 'Koramangala' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
+      { url: '/cars/creta.png', isPrimary: true },
     ],
     features: ['Panoramic Sunroof', 'Ventilated Seats', 'BOSE Sound', 'BlueLink', 'Lane Assist'],
     description: 'Top-spec Creta with panoramic sunroof and premium features.',
@@ -113,7 +113,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[1],
-    name: 'Tata Nexon EV',
+    name: 'Tata Nexon EV Max',
     brand: 'Tata',
     model: 'Nexon EV Max',
     year: 2023,
@@ -124,7 +124,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2200,
     location: { city: 'Pune', state: 'Maharashtra', address: 'Wakad' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/167485/nexon-ev-exterior-right-front-three-quarter.jpeg', isPrimary: true },
+      { url: '/cars/nexon.png', isPrimary: true },
     ],
     features: ['400km Range', 'Fast Charging', 'Connected Car Tech', 'ADAS Suite', 'Harman Audio'],
     description: 'Go green with Nexon EV Max. 400km range on single charge.',
@@ -135,7 +135,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[0],
-    name: 'BMW 5 Series',
+    name: 'BMW 5 Series 530d M Sport',
     brand: 'BMW',
     model: '530d M Sport',
     year: 2022,
@@ -146,7 +146,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 8500,
     location: { city: 'Delhi', state: 'Delhi', address: 'Connaught Place' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/49645/5-series-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
+      { url: '/cars/bmw.png', isPrimary: true },
     ],
     features: ['Leather Interior', 'Heads-Up Display', 'Parking Assistant', 'Ambient Lighting', 'Adaptive Cruise'],
     description: 'Experience ultimate luxury with the BMW 5 Series. Perfect for business travel.',
@@ -157,7 +157,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[1],
-    name: 'Mahindra Thar 4x4',
+    name: 'Mahindra Thar LX 4x4',
     brand: 'Mahindra',
     model: 'Thar LX',
     year: 2023,
@@ -168,7 +168,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 3200,
     location: { city: 'Goa', state: 'Goa', address: 'Panjim' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/40087/thar-exterior-right-front-three-quarter-4.jpeg', isPrimary: true },
+      { url: '/cars/thar.png', isPrimary: true },
     ],
     features: ['4x4 Drive', 'Convertible', 'Snorkel', 'Off-Road Terrain', 'Rock Crawling Mode'],
     description: 'Perfect for Goa beach drives and off-road adventures!',
@@ -179,7 +179,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[0],
-    name: 'Honda City V',
+    name: 'Honda City 5th Gen',
     brand: 'Honda',
     model: 'City 5th Gen',
     year: 2022,
@@ -190,7 +190,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 1800,
     location: { city: 'Chennai', state: 'Tamil Nadu', address: 'Anna Nagar' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/134297/city-exterior-right-front-three-quarter-2.jpeg', isPrimary: true },
+      { url: '/cars/honda.png', isPrimary: true },
     ],
     features: ['Honda Sensing', 'Wireless Carplay', 'Heated Mirrors', 'LaneWatch', 'LKAS'],
     description: 'Reliable and fuel-efficient sedan with advanced safety features.',
@@ -201,7 +201,7 @@ const seedCars = (ownerIds) => [
   },
   {
     owner: ownerIds[1],
-    name: 'Kia Seltos HTX',
+    name: 'Kia Seltos HTX+',
     brand: 'Kia',
     model: 'Seltos HTX+',
     year: 2023,
@@ -212,7 +212,7 @@ const seedCars = (ownerIds) => [
     pricePerDay: 2400,
     location: { city: 'Hyderabad', state: 'Telangana', address: 'Madhapur' },
     images: [
-      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', isPrimary: true },
+      { url: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/144163/seltos-exterior-right-front-three-quarter.jpeg', isPrimary: true },
     ],
     features: ['10.25" Touchscreen', 'Bose Sound', 'ADAS', 'OTA Updates', 'Sunroof'],
     description: 'Feature-packed SUV with segment-best tech and comfort.',

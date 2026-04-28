@@ -32,6 +32,18 @@ exports.register = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
+    // Validate email format strictly
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+if (!emailRegex.test(email)) {
+  return res.status(400).json({ error: 'Please provide a valid email address' });
+}
+
+// Block fake/disposable emails
+const blockedDomains = ['test.com', 'fake.com', 'temp.com', 'throwaway.com'];
+const emailDomain = email.split('@')[1];
+if (blockedDomains.includes(emailDomain)) {
+  return res.status(400).json({ error: 'Please use a valid email address' });
+}
 
     const allowedRoles = ['user', 'owner'];
     const userRole = allowedRoles.includes(role) ? role : 'user';

@@ -17,6 +17,8 @@ const BookingDetail = lazy(() => import('./pages/BookingDetail'));
 const OwnerDashboard = lazy(() => import('./pages/OwnerDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function ProtectedRoute({ children, roles }: { children: JSX.Element; roles?: string[] }) {
@@ -51,6 +53,8 @@ function App() {
             <Route path="cars/:id" element={<CarDetail />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
             <Route path="dashboard" element={
               <ProtectedRoute><Dashboard /></ProtectedRoute>
             } />

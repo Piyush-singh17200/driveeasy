@@ -175,10 +175,16 @@ exports.cancelBooking = async (req, res, next) => {
     }
 
     booking.status = 'cancelled';
-    booking.cancellationReason = req.body.reason;
-    booking.cancelledAt = new Date();
-    booking.cancelledBy = req.user.id;
-    await booking.save();
+booking.cancellationReason = req.body.reason;
+booking.cancelledAt = new Date();
+booking.cancelledBy = req.user.id;
+await booking.save();
+
+// Update car to available
+await Car.findByIdAndUpdate(booking.car._id, {
+  isAvailable: true,
+  $pull: { bookedDates: { bookingId: booking._id } },
+});
 
     // Remove booked dates from car
     await Car.findByIdAndUpdate(booking.car._id, {
