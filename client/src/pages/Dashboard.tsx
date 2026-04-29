@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import {
   BarChart3, Calendar, Car, CheckCircle, Clock, IndianRupee,
   Loader2, Shield, User as UserIcon, Users, XCircle, Lock
+} from 'lucide-react';
 import { adminAPI, bookingsAPI, carsAPI, authAPI } from '../utils/api';
 import { useAuthStore } from '../store/authStore';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
