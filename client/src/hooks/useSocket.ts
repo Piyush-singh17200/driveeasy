@@ -78,7 +78,8 @@ export const useSocket = () => {
   }, []);
 
   const onCarAvailabilityChange = useCallback((callback: (data: any) => void) => {
-    socket?.on('car_availability_changed', callback);
+    if (!socket) return () => {};
+    socket.on('car_availability_changed', callback);
     return () => { socket?.off('car_availability_changed', callback); };
   }, []);
 
