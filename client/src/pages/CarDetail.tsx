@@ -93,8 +93,8 @@ export default function CarDetail() {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       pickupLocation: {
-        address: car?.location.address,
-        city: car?.location.city,
+        address: car?.location?.address || '',
+        city: car?.location?.city || '',
       },
       specialRequests,
     });
@@ -109,7 +109,12 @@ export default function CarDetail() {
   }
 };
 
-  const isOwner = user && (car.owner === user._id || (car.owner as any)?._id === user._id || car.owner === (user as any).id || (car.owner as any)?._id === (user as any).id);
+  const isOwner = user && (
+    car?.owner === user._id || 
+    (car?.owner as any)?._id === user._id || 
+    car?.owner === (user as any).id || 
+    (car?.owner as any)?._id === (user as any).id
+  );
 
   if (isLoading) return (
     <div className="min-h-screen bg-dark-900 pt-24 flex items-center justify-center">
@@ -203,7 +208,7 @@ export default function CarDetail() {
 
               <div className="flex items-center gap-1.5 text-white/50 text-sm mb-6">
                 <MapPin className="w-4 h-4" />
-                {car.location.address && `${car.location.address}, `}{car.location.city}, {car.location.state}
+                {car.location?.address && `${car.location.address}, `}{car.location?.city}, {car.location?.state}
               </div>
 
               {/* Specs Grid */}
@@ -223,27 +228,29 @@ export default function CarDetail() {
               </div>
 
               {/* Interactive Location Map */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-white mb-3">Live Location</h3>
-                <div className="h-48 w-full rounded-xl overflow-hidden border border-white/5 relative z-0">
-                  <MapContainer 
-                    center={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]} 
-                    zoom={12} 
-                    className="h-full w-full"
-                    scrollWheelZoom={false}
-                  >
-                    <TileLayer
-                      url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    />
-                    <Marker position={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]}>
-                      <Popup className="text-dark-900 font-medium">
-                        {car.location.city}, {car.location.state}
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
+              {car.location && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-white mb-3">Live Location</h3>
+                  <div className="h-48 w-full rounded-xl overflow-hidden border border-white/5 relative z-0">
+                    <MapContainer 
+                      center={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]} 
+                      zoom={12} 
+                      className="h-full w-full"
+                      scrollWheelZoom={false}
+                    >
+                      <TileLayer
+                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      />
+                      <Marker position={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]}>
+                        <Popup className="text-dark-900 font-medium">
+                          {car.location.city}, {car.location.state}
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Features */}
               {car.features && car.features.length > 0 && (
