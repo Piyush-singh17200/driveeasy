@@ -249,23 +249,27 @@ exports.forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).json({ error: 'No user found with that email' });
+      return res.json({ success: true, message: 'If that email is registered, a password reset OTP has been sent.' });
     }
 
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = crypto.createHash('sha256').update(otp).digest('hex');
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-    await sendEmail({
+    sendEmail({
       to: user.email,
-      subject: 'Password Reset Request',
-      template: 'passwordReset',
-      data: { name: user.name, resetUrl },
-    });
+      subject: 'Your Password Reset OTP',
+      template: 'otp',
+      data: { name: user.name, otp },
+    })
+      .then(() => logger.info(`[Development] Reset OTP for ${user.email} is: ${otp}`))
+      .catch(err => {
+        logger.error('Failed to send reset OTP email:', err);
+        logger.info(`[Development Fallback] Reset OTP for ${user.email} is: ${otp}`);
+      });
 
-    res.json({ success: true, message: 'Password reset email sent' });
+    res.json({ success: true, message: 'If that email is registered, a password reset OTP has been sent.' });
   } catch (error) {
     next(error);
   }
@@ -280,7 +284,7 @@ exports.resetPassword = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(400).json({ error: 'Invalid or expired reset token' });
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
     }
 
     user.password = req.body.password;
@@ -288,7 +292,7 @@ exports.resetPassword = async (req, res, next) => {
     user.resetPasswordExpire = undefined;
     await user.save();
 
-    sendTokenResponse(user, 200, res);
+    res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
   } catch (error) {
     next(error);
   }

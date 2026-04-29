@@ -11,6 +11,7 @@ const Cars = lazy(() => import('./pages/Cars'));
 const CarDetail = lazy(() => import('./pages/CarDetail'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Bookings = lazy(() => import('./pages/Bookings'));
 const BookingDetail = lazy(() => import('./pages/BookingDetail'));
@@ -53,6 +54,7 @@ function App() {
             <Route path="cars/:id" element={<CarDetail />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
             <Route path="dashboard" element={
