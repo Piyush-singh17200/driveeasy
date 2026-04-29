@@ -5,8 +5,9 @@ const {
   createBooking, getBookings, getBooking, cancelBooking,
   getOwnerBookings, updateBookingStatus, addReview
 } = require('../controllers/bookingController');
+const { bookingValidator } = require('../middleware/validators');
 
-router.post('/', protect, createBooking);
+router.post('/', protect, bookingValidator, createBooking);
 router.get('/', protect, getBookings);
 router.get('/owner', protect, authorize('owner', 'admin'), getOwnerBookings);
 router.get('/:id', protect, getBooking);

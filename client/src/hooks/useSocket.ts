@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 let socket: Socket | null = null;
+const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 export const useSocket = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -11,7 +12,7 @@ export const useSocket = () => {
 
   useEffect(() => {
     if (!socket) {
-      socket = io('https://driveeasy-server.onrender.com', {
+      socket = io(socketUrl, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
         reconnection: true,

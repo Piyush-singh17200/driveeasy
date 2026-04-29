@@ -2,6 +2,7 @@ const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 const User = require('../models/User');
 const { sendEmail } = require('../services/emailService');
+const { createAuditLog } = require('../services/auditService');
 const logger = require('../utils/logger');
 
 exports.createBooking = async (req, res, next) => {
@@ -54,8 +55,19 @@ if (conflict) {
       specialRequests,
     });
 
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'CREATE_BOOKING',
+      resource: 'Booking',
+      resourceId: booking._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { carId, totalAmount },
+    });
+
     // Add booked dates to car
     await Car.findByIdAndUpdate(carId, {
+      isAvailable: false,
       $push: {
         bookedDates: { startDate: start, endDate: end, bookingId: booking._id },
       },
@@ -180,14 +192,18 @@ booking.cancelledAt = new Date();
 booking.cancelledBy = req.user.id;
 await booking.save();
 
-// Update car to available
-await Car.findByIdAndUpdate(booking.car._id, {
-  isAvailable: true,
-  $pull: { bookedDates: { bookingId: booking._id } },
+await createAuditLog({
+  userId: req.user.id,
+  action: 'CANCEL_BOOKING',
+  resource: 'Booking',
+  resourceId: booking._id.toString(),
+  ipAddress: req.ip,
+  userAgent: req.get('User-Agent'),
+  metadata: { reason: req.body.reason },
 });
 
-    // Remove booked dates from car
     await Car.findByIdAndUpdate(booking.car._id, {
+      isAvailable: true,
       $pull: { bookedDates: { bookingId: booking._id } },
     });
 
@@ -263,6 +279,16 @@ exports.updateBookingStatus = async (req, res, next) => {
 
     booking.status = status;
     await booking.save();
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'UPDATE_BOOKING_STATUS',
+      resource: 'Booking',
+      resourceId: booking._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { oldStatus: booking.status, newStatus: status },
+    });
 
     const io = req.app.get('io');
     io.to(`user_${booking.user._id}`).emit('booking_status_updated', {

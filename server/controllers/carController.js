@@ -1,7 +1,34 @@
 const Car = require('../models/Car');
 const Booking = require('../models/Booking');
 const { uploadImage, deleteImage } = require('../services/cloudinaryService');
+const { createAuditLog } = require('../services/auditService');
 const logger = require('../utils/logger');
+
+const normalizeCarData = (body) => {
+  const data = { ...body };
+
+  if (!data.location) data.location = {};
+  if (data['location[city]']) {
+    data.location.city = data['location[city]'];
+    delete data['location[city]'];
+  }
+  if (data['location[state]']) {
+    data.location.state = data['location[state]'];
+    delete data['location[state]'];
+  }
+  if (data['location[address]']) {
+    data.location.address = data['location[address]'];
+    delete data['location[address]'];
+  }
+
+  if (typeof data.features === 'string') {
+    data.features = data.features.includes(',')
+      ? data.features.split(',').map(feature => feature.trim()).filter(Boolean)
+      : [data.features];
+  }
+
+  return data;
+};
 
 exports.getCars = async (req, res, next) => {
   try {
@@ -83,7 +110,7 @@ exports.getCar = async (req, res, next) => {
 
 exports.createCar = async (req, res, next) => {
   try {
-    const carData = { ...req.body, owner: req.user.id };
+    const carData = { ...normalizeCarData(req.body), owner: req.user.id };
 
     // Handle image uploads
     if (req.files?.length > 0) {
@@ -95,9 +122,25 @@ exports.createCar = async (req, res, next) => {
         }))
       );
       carData.images = await Promise.all(uploadPromises);
+    } else if (req.body.images) {
+      try {
+        carData.images = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
+      } catch {
+        carData.images = [];
+      }
     }
 
     const car = await Car.create(carData);
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'CREATE_CAR',
+      resource: 'Car',
+      resourceId: car._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { carName: `${car.brand} ${car.model}` },
+    });
 
     // Notify admin via socket
     const io = req.app.get('io');
@@ -135,9 +178,21 @@ exports.updateCar = async (req, res, next) => {
       req.body.images = [...(car.images || []), ...newImages];
     }
 
-    car = await Car.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = normalizeCarData(req.body);
+
+    car = await Car.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'UPDATE_CAR',
+      resource: 'Car',
+      resourceId: car._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { updatedFields: Object.keys(updateData) },
     });
 
     // Emit availability update
@@ -175,6 +230,16 @@ exports.deleteCar = async (req, res, next) => {
     }
 
     await Car.findByIdAndDelete(req.params.id);
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'DELETE_CAR',
+      resource: 'Car',
+      resourceId: req.params.id,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { carName: `${car.brand} ${car.model}` },
+    });
 
     res.json({ success: true, message: 'Car deleted successfully' });
   } catch (error) {

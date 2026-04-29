@@ -2,7 +2,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const api = axios.create({
-  baseURL: 'https://driveeasy-server.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -76,6 +76,7 @@ export const bookingsAPI = {
 export const paymentsAPI = {
   createPaymentIntent: (bookingId: string) => api.post('/payments/create-intent', { bookingId }),
   confirmPayment: (data: any) => api.post('/payments/confirm', data),
+  confirmUpi: (data: any) => api.post('/payments/confirm-upi', data),
   getHistory: () => api.get('/payments/history'),
 };
 

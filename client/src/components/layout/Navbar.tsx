@@ -41,15 +41,17 @@ export default function Navbar() {
     await logout();
     navigate('/');
   };
-const navLinks = [
-  { href: '/cars', label: 'Browse Cars' },
-  { href: '/cars?category=SUV', label: 'SUVs' },
-  { href: '/cars?category=Luxury', label: 'Luxury' },
-  { href: '/cars?category=Electric', label: 'Electric' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
-];
+  const navLinks = [
+    { href: '/cars', label: 'Browse Cars' },
+    { href: '/cars?category=SUV', label: 'SUVs' },
+    { href: '/cars?category=Luxury', label: 'Luxury' },
+    { href: '/cars?category=Electric', label: 'Electric' },
+    { href: '/about', label: 'About' },
+    { href: '/contact', label: 'Contact' },
+  ];
   const dashboardLink = user?.role === 'admin' ? '/admin' : user?.role === 'owner' ? '/owner' : '/dashboard';
+  const currentPath = `${location.pathname}${location.search}`;
+  const isLinkActive = (href: string) => href.includes('?') ? currentPath === href : location.pathname === href;
 
   return (
     <motion.nav
@@ -78,7 +80,7 @@ const navLinks = [
                 key={link.href}
                 to={link.href}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  location.pathname === link.href
+                  isLinkActive(link.href)
                     ? 'text-primary-400 bg-primary-500/10'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
                 }`}
@@ -94,7 +96,7 @@ const navLinks = [
               <>
                 {/* Notifications Bell */}
                 <Link
-                  to="/dashboard"
+                  to={dashboardLink}
                   className="relative p-2 rounded-xl hover:bg-white/5 text-white/70 hover:text-white transition-colors"
                 >
                   <Bell className="w-5 h-5" />
@@ -208,6 +210,7 @@ const navLinks = [
                 <div className="pt-3 border-t border-white/5 space-y-1">
                   <Link to={dashboardLink} className="block px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5">Dashboard</Link>
                   <Link to="/bookings" className="block px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5">Bookings</Link>
+                  <Link to="/profile" className="block px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5">Profile</Link>
                   <button onClick={handleLogout} className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10">Sign Out</button>
                 </div>
               )}

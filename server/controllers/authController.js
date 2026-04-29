@@ -26,7 +26,8 @@ const sendTokenResponse = (user, statusCode, res) => {
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role, phone } = req.body;
+    const { name, email, password, role } = req.body;
+    const phone = req.body.phone ? String(req.body.phone).replace(/\D/g, '') : undefined;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -43,6 +44,9 @@ const blockedDomains = ['test.com', 'fake.com', 'temp.com', 'throwaway.com'];
 const emailDomain = email.split('@')[1];
 if (blockedDomains.includes(emailDomain)) {
   return res.status(400).json({ error: 'Please use a valid email address' });
+}
+if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+  return res.status(400).json({ error: 'Phone must be exactly 10 digits starting with 6, 7, 8, or 9' });
 }
 
     const allowedRoles = ['user', 'owner'];

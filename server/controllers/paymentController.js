@@ -97,6 +97,66 @@ exports.confirmPayment = async (req, res, next) => {
   }
 };
 
+exports.confirmUpiPayment = async (req, res, next) => {
+  try {
+    const { bookingId, utrNumber } = req.body;
+
+    if (!utrNumber || !/^[A-Za-z0-9]{6,20}$/.test(utrNumber)) {
+      return res.status(400).json({ error: 'Valid UTR number is required' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await prisma.payment.upsert({
+      where: { bookingId: booking._id.toString() },
+      update: {
+        status: 'COMPLETED',
+        method: 'UPI',
+        metadata: { utrNumber },
+      },
+      create: {
+        bookingId: booking._id.toString(),
+        userId: req.user.id,
+        amount: booking.totalAmount,
+        currency: 'INR',
+        status: 'COMPLETED',
+        method: 'UPI',
+        metadata: { utrNumber },
+      },
+    });
+
+    await prisma.transaction.create({
+      data: {
+        paymentId: booking._id.toString(),
+        type: 'PAYMENT',
+        amount: booking.totalAmount,
+        description: `UPI payment for booking ${booking._id}`,
+        metadata: { utrNumber },
+      },
+    });
+
+    booking.paymentStatus = 'paid';
+    booking.paymentId = utrNumber;
+    booking.status = 'confirmed';
+    await booking.save();
+
+    const io = req.app.get('io');
+    io.to(`user_${req.user.id}`).emit('payment_success', {
+      bookingId,
+      message: 'Payment successful! Your booking is confirmed.',
+    });
+
+    res.json({ success: true, booking, message: 'UPI payment confirmed successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getPaymentHistory = async (req, res, next) => {
   try {
     const payments = await prisma.payment.findMany({

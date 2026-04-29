@@ -12,21 +12,13 @@ export function Login() {
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (form.phone && !/^[6-9]\d{9}$/.test(form.phone)) {
-    toast.error('Phone must be exactly 10 digits starting with 6, 7, 8, or 9');
-    return;
-  }
-  if (form.password.length < 6) {
-    toast.error('Password must be at least 6 characters');
-    return;
-  }
-  try {
-    await register(form);
-    navigate('/dashboard');
-  } catch {}
-};
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await login(email.trim().toLowerCase(), password);
+      navigate('/dashboard');
+    } catch {}
+  };
   return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-20">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -100,12 +92,23 @@ export function Register() {
   const { register, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
-  const update = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
+  const update = (key: string, val: string) => {
+    const value = key === 'phone' ? val.replace(/\D/g, '').slice(0, 10) : val;
+    setForm(f => ({ ...f, [key]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.phone && !/^[6-9]\d{9}$/.test(form.phone)) {
+      toast.error('Phone must be exactly 10 digits starting with 6, 7, 8, or 9');
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
     try {
-      await register(form);
+      await register({ ...form, email: form.email.trim().toLowerCase() });
       navigate('/dashboard');
     } catch {}
   };
@@ -143,7 +146,7 @@ export function Register() {
             {[
               { key: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe' },
               { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
-              { key: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '+91 98765 43210' },
+              { key: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '9876543210' },
             ].map(({ key, label, type, placeholder }) => (
               <div key={key}>
                 <label className="label">{label}</label>

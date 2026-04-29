@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, Loader2, QrCode, Copy, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { paymentsAPI } from '../../utils/api';
 
 interface Props {
   isOpen: boolean;
@@ -46,11 +47,13 @@ export default function PaymentModal({ isOpen, onClose, onSuccess, amount, booki
       return;
     }
     setIsVerifying(true);
-    // Simulate verification
-    await new Promise(r => setTimeout(r, 2000));
-    setIsVerifying(false);
-    setStep('success');
-    setTimeout(() => { onSuccess(); }, 2000);
+    try {
+      await paymentsAPI.confirmUpi({ bookingId, utrNumber });
+      setStep('success');
+      setTimeout(() => { onSuccess(); }, 1200);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handlePaid = () => setStep('verify');

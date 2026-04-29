@@ -28,9 +28,9 @@ export default function CarDetail() {
   const [isBooking, setIsBooking] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [specialRequests, setSpecialRequests] = useState('');
-const [showPayment, setShowPayment] = useState(false);
-const [currentBookingId, setCurrentBookingId] = useState('');
-const [bookingAmount, setBookingAmount] = useState(0);
+  const [showPayment, setShowPayment] = useState(false);
+  const [currentBookingId, setCurrentBookingId] = useState('');
+  const [bookingAmount, setBookingAmount] = useState(0);
   useEffect(() => {
     if (!id) return;
     carsAPI.getCar(id)
@@ -64,10 +64,15 @@ const [bookingAmount, setBookingAmount] = useState(0);
       carId: id,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      pickupLocation: {
+        address: car?.location.address,
+        city: car?.location.city,
+      },
       specialRequests,
     });
     setCurrentBookingId(res.data.booking._id);
     setBookingAmount(total);
+    setIsAvailable(false);
     setShowPayment(true);
   } catch (err: any) {
     toast.error(err.response?.data?.error || 'Booking failed');
@@ -306,6 +311,14 @@ const [bookingAmount, setBookingAmount] = useState(0);
           </div>
         </div>
       </div>
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        onSuccess={() => navigate(`/bookings/${currentBookingId}`)}
+        amount={bookingAmount}
+        bookingId={currentBookingId}
+        carName={`${car.brand} ${car.model}`}
+      />
     </div>
   );
 }
