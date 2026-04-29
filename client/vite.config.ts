@@ -6,27 +6,27 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0',
-    allowedHosts: [
-      'all',
-      '.ngrok-free.app',
-      '.ngrok-free.dev',
-      'undercook-octagon-linked.ngrok-free.dev',
-      'localhost',
-    ],
+    allowedHosts: 'all',
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: { 'ngrok-skip-browser-warning': 'true' },
       },
       '/socket.io': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         ws: true,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['framer-motion', 'lucide-react'],
+          utils: ['axios', 'zustand', 'date-fns'],
         },
       },
     },

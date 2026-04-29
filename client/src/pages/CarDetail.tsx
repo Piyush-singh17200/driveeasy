@@ -1,3 +1,4 @@
+import PaymentModal from '../components/ui/PaymentModal';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -27,7 +28,9 @@ export default function CarDetail() {
   const [isBooking, setIsBooking] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [specialRequests, setSpecialRequests] = useState('');
-
+const [showPayment, setShowPayment] = useState(false);
+const [currentBookingId, setCurrentBookingId] = useState('');
+const [bookingAmount, setBookingAmount] = useState(0);
   useEffect(() => {
     if (!id) return;
     carsAPI.getCar(id)
@@ -50,27 +53,28 @@ export default function CarDetail() {
   const taxes = Math.round(subtotal * 0.18);
   const total = subtotal + taxes;
 
-  const handleBook = async () => {
-    if (!isAuthenticated) return navigate('/login');
-    if (!startDate || !endDate) return toast.error('Please select booking dates');
-    if (!isAvailable) return toast.error('Car is not available');
+ const handleBook = async () => {
+  if (!isAuthenticated) return navigate('/login');
+  if (!startDate || !endDate) return toast.error('Please select booking dates');
+  if (!isAvailable) return toast.error('Car is not available');
 
-    setIsBooking(true);
-    try {
-      const res = await bookingsAPI.createBooking({
-        carId: id,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        specialRequests,
-      });
-      toast.success('Booking created successfully!');
-      navigate(`/bookings/${res.data.booking._id}`);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Booking failed');
-    } finally {
-      setIsBooking(false);
-    }
-  };
+  setIsBooking(true);
+  try {
+    const res = await bookingsAPI.createBooking({
+      carId: id,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      specialRequests,
+    });
+    setCurrentBookingId(res.data.booking._id);
+    setBookingAmount(total);
+    setShowPayment(true);
+  } catch (err: any) {
+    toast.error(err.response?.data?.error || 'Booking failed');
+  } finally {
+    setIsBooking(false);
+  }
+};
 
   if (isLoading) return (
     <div className="min-h-screen bg-dark-900 pt-24 flex items-center justify-center">

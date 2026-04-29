@@ -12,14 +12,21 @@ export function Login() {
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch {}
-  };
-
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (form.phone && !/^[6-9]\d{9}$/.test(form.phone)) {
+    toast.error('Phone must be exactly 10 digits starting with 6, 7, 8, or 9');
+    return;
+  }
+  if (form.password.length < 6) {
+    toast.error('Password must be at least 6 characters');
+    return;
+  }
+  try {
+    await register(form);
+    navigate('/dashboard');
+  } catch {}
+};
   return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-20">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
