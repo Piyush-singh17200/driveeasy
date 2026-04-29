@@ -83,7 +83,7 @@ export default function CarCard({ car, index = 0 }: Props) {
             <p className="text-xs text-white/40 mt-0.5">{car.year} · {car.transmission}</p>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-primary-400">₹{car.pricePerDay.toLocaleString()}</p>
+            <p className="text-lg font-bold text-primary-400">₹{(car.pricePerDay || 0).toLocaleString()}</p>
             <p className="text-xs text-white/40">/day</p>
           </div>
         </div>

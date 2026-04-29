@@ -132,7 +132,7 @@ export default function CarFiltersPanel({ filters, onChange, onReset }: Props) {
         <span className="text-sm text-white/70">Available Only</span>
         <div className={`w-10 h-5 rounded-full transition-colors relative ${filters.available ? 'bg-primary-500' : 'bg-white/10'}`}
           onClick={() => update('available', !filters.available)}>
-          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.available ? 'left-5.5 translate-x-0.5' : 'left-0.5'}`} />
+          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.available ? 'left-5' : 'left-0.5'}`} />
         </div>
       </label>
 

@@ -115,7 +115,7 @@ export default function Navbar() {
                       {user.avatar ? (
                         <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-white text-sm font-bold">{user.name[0].toUpperCase()}</span>
+                        <span className="text-white text-sm font-bold">{(user.name || 'U')[0].toUpperCase()}</span>
                       )}
                     </div>
                     <span className="hidden md:block text-sm font-medium text-white/90">{user.name.split(' ')[0]}</span>

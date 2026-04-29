@@ -65,11 +65,16 @@ export default function Cars() {
     try {
       const [sortBy, order] = sortValue.split(':');
       const res = await carsAPI.getCars({ ...filters, search: search || undefined, sortBy, order });
-      setCars(res.data.cars);
-      setTotalPages(res.data.pagination.pages);
-      setTotalCars(res.data.pagination.total);
+      if (res.data && res.data.success) {
+        setCars(res.data.cars || []);
+        setTotalPages(res.data.pagination?.pages || 1);
+        setTotalCars(res.data.pagination?.total || 0);
+      } else {
+        throw new Error(res.data?.error || 'Failed to fetch cars');
+      }
     } catch (err) {
       console.error(err);
+      setCars([]);
     } finally {
       setIsLoading(false);
     }
@@ -138,9 +143,9 @@ export default function Cars() {
 
           {/* Car Grid */}
           <div className="flex-1 min-w-0">
-            {/* Mobile filter trigger is inside CarFiltersPanel, shown inline on mobile */}
-            <div className="flex items-center justify-between mb-4 md:hidden">
-              <CarFiltersPanel filters={filters} onChange={setFilters} onReset={resetFilters} />
+            {/* Mobile filter trigger - shown inline on mobile */}
+            <div className="mb-4 md:hidden">
+              {/* The CarFiltersPanel already handles its own mobile trigger */}
             </div>
 
             {isLoading ? (
