@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const Message = require('../models/Message');
 
 const connectedUsers = new Map();
 
@@ -34,11 +35,20 @@ const socketHandler = (io) => {
     });
 
     // Real-time chat
-    socket.on('send_message', (data) => {
-      const { recipientId, message, senderId } = data;
+    socket.on('send_message', async (data) => {
+      const { recipientId, message, senderId, bookingId } = data;
+      try {
+        if (bookingId && recipientId && senderId) {
+          await Message.create({ booking: bookingId, sender: senderId, receiver: recipientId, text: message });
+        }
+      } catch (err) {
+        logger.error('Failed to save message:', err.message);
+      }
+      
       io.to(`user_${recipientId}`).emit('receive_message', {
         senderId,
         message,
+        bookingId,
         timestamp: new Date().toISOString(),
       });
     });

@@ -71,6 +71,7 @@ export const bookingsAPI = {
   getOwnerBookings: (params?: any) => api.get('/bookings/owner', { params }),
   updateBookingStatus: (id: string, status: string) => api.put(`/bookings/${id}/status`, { status }),
   addReview: (id: string, data: any) => api.post(`/bookings/${id}/review`, data),
+  getBookingMessages: (id: string) => api.get(`/bookings/${id}/messages`),
 };
 
 // ─── Payments API ──────────────────────────────────────────────────────────────

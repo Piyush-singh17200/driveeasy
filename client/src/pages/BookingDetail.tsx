@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { Calendar, MapPin, Star, CheckCircle, XCircle, Clock, Loader2, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Star, CheckCircle, XCircle, Clock, Loader2, ArrowLeft, Send, MessageSquare } from 'lucide-react';
 import { bookingsAPI } from '../utils/api';
 import { Booking } from '../types';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
+import { useSocket } from '../hooks/useSocket';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -28,6 +29,10 @@ export default function BookingDetail() {
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState({ rating: 5, comment: '' });
   const { user } = useAuthStore();
+  const { socket } = useSocket();
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -35,7 +40,61 @@ export default function BookingDetail() {
       .then(res => setBooking(res.data.booking))
       .catch(() => toast.error('Booking not found'))
       .finally(() => setIsLoading(false));
+
+    // Fetch chat history
+    bookingsAPI.getBookingMessages(id)
+      .then(res => setMessages(res.data.data))
+      .catch(err => console.error('Failed to load messages', err));
   }, [id]);
+
+  useEffect(() => {
+    if (!socket || !id) return;
+
+    const handleReceiveMessage = (data: any) => {
+      if (data.bookingId === id) {
+        setMessages(prev => [...prev, {
+          _id: Date.now().toString(),
+          sender: data.senderId,
+          text: data.message,
+          createdAt: new Date().toISOString()
+        }]);
+      }
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+    return () => {
+      socket.off('receive_message', handleReceiveMessage);
+    };
+  }, [socket, id]);
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !id || !booking || !user || !socket) return;
+
+    const recipientId = isOwner ? bookingUser?._id : car?.owner?._id || car?.owner;
+    if (!recipientId) return toast.error('Recipient not found');
+
+    const messageData = {
+      bookingId: id,
+      senderId: user._id,
+      recipientId,
+      message: newMessage.trim()
+    };
+
+    setIsSending(true);
+    socket.emit('send_message', messageData);
+    
+    // Optimistic update
+    setMessages(prev => [...prev, {
+      _id: Date.now().toString(),
+      sender: user._id,
+      text: newMessage.trim(),
+      createdAt: new Date().toISOString()
+    }]);
+    
+    setNewMessage('');
+    setIsSending(false);
+  };
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -250,6 +309,54 @@ export default function BookingDetail() {
                 Complete Booking
               </button>
             )}
+          </div>
+
+          {/* Real-time Chat Section */}
+          <div className="card overflow-hidden">
+            <div className="p-4 border-b border-white/5 bg-white/5 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary-400" />
+              <h3 className="font-semibold text-white">Chat with {isOwner ? 'Customer' : 'Owner'}</h3>
+            </div>
+            
+            <div className="h-64 overflow-y-auto p-4 space-y-3 flex flex-col bg-dark-600/30">
+              {messages.length === 0 && (
+                <div className="flex-1 flex flex-col items-center justify-center opacity-30">
+                  <MessageSquare className="w-8 h-8 mb-2" />
+                  <p className="text-sm">No messages yet. Say hi!</p>
+                </div>
+              )}
+              {messages.map((msg) => {
+                const isMe = msg.sender === user?._id;
+                return (
+                  <div key={msg._id} className={`max-w-[80%] rounded-2xl p-3 text-sm ${
+                    isMe ? 'bg-primary-500 text-white self-end rounded-tr-none' : 'bg-dark-600 text-white/80 self-start rounded-tl-none border border-white/5'
+                  }`}>
+                    <p>{msg.text}</p>
+                    <p className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-white/30'}`}>
+                      {format(new Date(msg.createdAt), 'HH:mm')}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <form onSubmit={sendMessage} className="p-4 border-t border-white/5 flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="input text-sm py-2 flex-1"
+                disabled={isSending}
+              />
+              <button 
+                type="submit" 
+                disabled={isSending || !newMessage.trim()} 
+                className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
           </div>
 
           {/* Review Form */}

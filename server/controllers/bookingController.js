@@ -36,7 +36,15 @@ if (conflict) {
 
     const msPerDay = 1000 * 60 * 60 * 24;
     const totalDays = Math.ceil((end - start) / msPerDay);
-    const subtotal = totalDays * car.pricePerDay;
+    
+    // Dynamic Pricing Engine
+    let priceModifier = 1;
+    const isWeekend = start.getDay() === 0 || start.getDay() === 6 || end.getDay() === 0 || end.getDay() === 6;
+    if (isWeekend) priceModifier += 0.15;
+    if (totalDays >= 7) priceModifier -= 0.10;
+
+    const baseSubtotal = totalDays * car.pricePerDay;
+    const subtotal = Math.round(baseSubtotal * priceModifier);
     const taxes = Math.round(subtotal * 0.18);
     const totalAmount = subtotal + taxes;
 
@@ -337,3 +345,5 @@ exports.addReview = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getBookingMessages = async (req, res, next) => { try { const Message = require('../models/Message'); const messages = await Message.find({ booking: req.params.id }).sort('createdAt'); res.status(200).json({ success: true, count: messages.length, data: messages }); } catch (error) { next(error); } };

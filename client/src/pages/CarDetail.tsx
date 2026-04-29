@@ -6,13 +6,24 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {
   MapPin, Star, Fuel, Users, Calendar, Shield, ChevronLeft,
-  Heart, Share2, Zap, CheckCircle, XCircle, Loader2
+  Heart, Share2, Zap, CheckCircle, XCircle, Loader2, TrendingUp, Tag
 } from 'lucide-react';
 import { carsAPI, bookingsAPI } from '../utils/api';
 import { Car } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
 import toast from 'react-hot-toast';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix leaflet default icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
@@ -49,7 +60,24 @@ export default function CarDetail() {
   }, [id]);
 
   const totalDays = startDate && endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000) : 0;
-  const subtotal = totalDays * (car?.pricePerDay || 0);
+  
+  // Dynamic Pricing Engine
+  let priceModifier = 1;
+  let modifierReason = '';
+  if (startDate && endDate) {
+    const isWeekend = startDate.getDay() === 0 || startDate.getDay() === 6 || endDate.getDay() === 0 || endDate.getDay() === 6;
+    if (isWeekend) {
+      priceModifier += 0.15;
+      modifierReason = 'Weekend Surge (+15%)';
+    }
+    if (totalDays >= 7) {
+      priceModifier -= 0.10;
+      modifierReason = isWeekend ? 'Weekend Surge + Weekly Discount' : 'Weekly Discount (-10%)';
+    }
+  }
+
+  const baseSubtotal = totalDays * (car?.pricePerDay || 0);
+  const subtotal = Math.round(baseSubtotal * priceModifier);
   const taxes = Math.round(subtotal * 0.18);
   const total = subtotal + taxes;
 
@@ -194,6 +222,29 @@ export default function CarDetail() {
                 ))}
               </div>
 
+              {/* Interactive Location Map */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-white mb-3">Live Location</h3>
+                <div className="h-48 w-full rounded-xl overflow-hidden border border-white/5 relative z-0">
+                  <MapContainer 
+                    center={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]} 
+                    zoom={12} 
+                    className="h-full w-full"
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer
+                      url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    />
+                    <Marker position={[car.location.coordinates?.lat || 19.0760, car.location.coordinates?.lng || 72.8777]}>
+                      <Popup className="text-dark-900 font-medium">
+                        {car.location.city}, {car.location.state}
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
+
               {/* Features */}
               {car.features && car.features.length > 0 && (
                 <div>
@@ -280,8 +331,17 @@ export default function CarDetail() {
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-dark-600 rounded-xl p-4 mb-4 space-y-2 text-sm">
                     <div className="flex justify-between text-white/60">
                       <span>₹{car.pricePerDay.toLocaleString()} × {totalDays} day{totalDays > 1 ? 's' : ''}</span>
-                      <span>₹{subtotal.toLocaleString()}</span>
+                      <span>₹{baseSubtotal.toLocaleString()}</span>
                     </div>
+                    {priceModifier !== 1 && (
+                      <div className="flex justify-between text-primary-400 font-medium">
+                        <span className="flex items-center gap-1">
+                          {priceModifier > 1 ? <TrendingUp className="w-3.5 h-3.5" /> : <Tag className="w-3.5 h-3.5" />}
+                          {modifierReason}
+                        </span>
+                        <span>{priceModifier > 1 ? '+' : '-'} ₹{Math.abs(subtotal - baseSubtotal).toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-white/60">
                       <span>GST (18%)</span>
                       <span>₹{taxes.toLocaleString()}</span>

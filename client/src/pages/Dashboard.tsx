@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 import {
   BarChart3, Calendar, Car, CheckCircle, Clock, IndianRupee,
   Loader2, Shield, User as UserIcon, Users, XCircle, Lock
-} from 'lucide-react';
 import { adminAPI, bookingsAPI, carsAPI, authAPI } from '../utils/api';
 import { useAuthStore } from '../store/authStore';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-500/20 text-yellow-400',
@@ -159,6 +159,19 @@ export function OwnerDashboard() {
     .filter(b => b.paymentStatus === 'paid' || b.status === 'completed' || b.status === 'confirmed')
     .reduce((sum, booking) => sum + (booking.totalAmount || 0), 0);
 
+  // Generate chart data
+  const last6Months = Array.from({ length: 6 }).map((_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return { name: d.toLocaleString('default', { month: 'short' }), total: 0, date: d };
+  }).reverse();
+
+  bookings.filter(b => b.paymentStatus === 'paid' || b.status === 'completed' || b.status === 'confirmed').forEach(b => {
+    const d = new Date(b.createdAt);
+    const month = last6Months.find(m => m.date.getMonth() === d.getMonth() && m.date.getFullYear() === d.getFullYear());
+    if (month) month.total += b.totalAmount || 0;
+  });
+
   if (isLoading) return <PageLoader />;
 
   return (
@@ -215,8 +228,22 @@ export function OwnerDashboard() {
 
           <div className="xl:col-span-2 space-y-6">
             <div className="card p-5">
+              <h3 className="font-semibold text-white mb-4">Earnings Overview</h3>
+              <div className="h-64 w-full text-xs">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={last6Months}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                    <XAxis dataKey="name" stroke="#ffffff50" />
+                    <YAxis stroke="#ffffff50" />
+                    <Tooltip contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #ffffff10', borderRadius: '8px', color: '#fff' }} />
+                    <Line type="monotone" dataKey="total" stroke="#e94560" strokeWidth={3} dot={{ fill: '#e94560' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="card p-5">
               <h3 className="font-semibold text-white mb-4">My Cars</h3>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                 {cars.map(car => <CarRow key={car._id} car={car} />)}
                 {cars.length === 0 && <p className="text-white/40 text-sm text-center py-8">No cars listed yet.</p>}
               </div>

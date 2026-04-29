@@ -1,13 +1,25 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Search, Map as MapIcon, Grid } from 'lucide-react';
 import { carsAPI } from '../utils/api';
 import { Car, CarFilters } from '../types';
 import CarCard from '../components/cars/CarCard';
 import CarFiltersPanel from '../components/cars/CarFilters';
 import AIChatWidget from '../components/ai/AIChatWidget';
 import { useSocket } from '../hooks/useSocket';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { useNavigate } from 'react-router-dom';
+
+// Fix leaflet default icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const SORT_OPTIONS = [
   { value: 'createdAt:desc', label: 'Newest First' },
@@ -24,7 +36,9 @@ export default function Cars() {
   const [totalCars, setTotalCars] = useState(0);
   const [search, setSearch] = useState('');
   const [sortValue, setSortValue] = useState('createdAt:desc');
+  const [showMap, setShowMap] = useState(false);
   const { onCarAvailabilityChange } = useSocket();
+  const navigate = useNavigate();
 
   const filters: CarFilters = React.useMemo(() => ({
     city: searchParams.get('city') || undefined,
@@ -123,15 +137,23 @@ export default function Cars() {
               className="input pl-10"
             />
           </form>
-          <select
-            value={sortValue}
-            onChange={e => setSortValue(e.target.value)}
-            className="input w-auto min-w-[180px]"
-          >
-            {SORT_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value} className="bg-dark-600">{opt.label}</option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowMap(!showMap)}
+              className="btn-ghost flex items-center gap-2 border border-white/5 bg-white/5"
+            >
+              {showMap ? <><Grid className="w-4 h-4" /> Grid View</> : <><MapIcon className="w-4 h-4" /> Map View</>}
+            </button>
+            <select
+              value={sortValue}
+              onChange={e => setSortValue(e.target.value)}
+              className="input w-auto min-w-[180px]"
+            >
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value} className="bg-dark-600">{opt.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -159,12 +181,37 @@ export default function Cars() {
                   </div>
                 ))}
               </div>
-            ) : cars.length === 0 ? (
-              <div className="text-center py-20">
-                <span className="text-6xl mb-4 block">🚗</span>
-                <h3 className="text-xl font-semibold text-white mb-2">No cars found</h3>
-                <p className="text-white/40 mb-6">Try adjusting your filters or search in a different city</p>
-                <button onClick={resetFilters} className="btn-primary">Clear All Filters</button>
+            ) : showMap ? (
+              <div className="h-[600px] w-full rounded-2xl overflow-hidden border border-white/5 relative z-0">
+                <MapContainer 
+                  center={[19.0760, 72.8777]} 
+                  zoom={11} 
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  />
+                  {cars.map(car => (
+                    car.location?.coordinates && (
+                      <Marker key={car._id} position={[car.location.coordinates.lat, car.location.coordinates.lng]}>
+                        <Popup>
+                          <div className="p-1 min-w-[150px]">
+                            <img src={car.images?.[0]?.url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />
+                            <h4 className="font-bold text-dark-900 leading-tight mb-1">{car.brand} {car.model}</h4>
+                            <p className="text-xs text-dark-600 mb-2">₹{car.pricePerDay}/day</p>
+                            <button 
+                              onClick={() => navigate(`/cars/${car._id}`)}
+                              className="w-full py-1.5 bg-primary-500 text-white rounded-lg text-xs font-bold"
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )
+                  ))}
+                </MapContainer>
               </div>
             ) : (
               <>
