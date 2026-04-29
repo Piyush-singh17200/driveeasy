@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
@@ -26,55 +26,37 @@ export default function Cars() {
   const [sortValue, setSortValue] = useState('createdAt:desc');
   const { onCarAvailabilityChange } = useSocket();
 
-  const [filters, setFilters] = useState<CarFilters>({
+  const filters: CarFilters = React.useMemo(() => ({
     city: searchParams.get('city') || undefined,
     category: searchParams.get('category') || undefined,
-    page: 1,
-    limit: 12,
-  });
+    fuel: searchParams.get('fuel') || undefined,
+    transmission: searchParams.get('transmission') || undefined,
+    minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined,
+    maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
+    seats: searchParams.get('seats') ? Number(searchParams.get('seats')) : undefined,
+    available: searchParams.has('available') ? searchParams.get('available') === 'true' : undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: 12
+  }), [searchParams]);
 
-  useEffect(() => {
-    setFilters(prev => {
-      const city = searchParams.get('city') || undefined;
-      const category = searchParams.get('category') || undefined;
-      const page = Number(searchParams.get('page')) || 1;
-      
-      // Only update if there's an actual change to prevent re-render loops
-      if (prev.city === city && prev.category === category && prev.page === page) {
-        return prev;
-      }
-      
-      return {
-        ...prev,
-        city,
-        category,
-        page,
-        limit: 12,
-      };
-    });
-  }, [searchParams]);
+  const setFilters = useCallback((newFiltersOrUpdater: React.SetStateAction<CarFilters>) => {
+    const nextFilters = typeof newFiltersOrUpdater === 'function' 
+      ? (newFiltersOrUpdater as (prev: CarFilters) => CarFilters)(filters) 
+      : newFiltersOrUpdater;
 
-  useEffect(() => {
     const nextParams = new URLSearchParams();
-    if (filters.city) nextParams.set('city', filters.city);
-    if (filters.category) nextParams.set('category', filters.category);
-    if (filters.fuel) nextParams.set('fuel', filters.fuel);
-    if (filters.transmission) nextParams.set('transmission', filters.transmission);
-    if (filters.minPrice) nextParams.set('minPrice', String(filters.minPrice));
-    if (filters.maxPrice) nextParams.set('maxPrice', String(filters.maxPrice));
-    if (filters.seats) nextParams.set('seats', String(filters.seats));
-    if (filters.available !== undefined) nextParams.set('available', String(filters.available));
-    if (filters.page && filters.page > 1) nextParams.set('page', String(filters.page));
+    if (nextFilters.city) nextParams.set('city', nextFilters.city);
+    if (nextFilters.category) nextParams.set('category', nextFilters.category);
+    if (nextFilters.fuel) nextParams.set('fuel', nextFilters.fuel);
+    if (nextFilters.transmission) nextParams.set('transmission', nextFilters.transmission);
+    if (nextFilters.minPrice) nextParams.set('minPrice', String(nextFilters.minPrice));
+    if (nextFilters.maxPrice) nextParams.set('maxPrice', String(nextFilters.maxPrice));
+    if (nextFilters.seats) nextParams.set('seats', String(nextFilters.seats));
+    if (nextFilters.available !== undefined) nextParams.set('available', String(nextFilters.available));
+    if (nextFilters.page && nextFilters.page > 1) nextParams.set('page', String(nextFilters.page));
 
-    // Sort keys to ensure stable comparison
-    nextParams.sort();
-    const currentParams = new URLSearchParams(searchParams);
-    currentParams.sort();
-
-    if (nextParams.toString() !== currentParams.toString()) {
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [filters, searchParams, setSearchParams]);
+    setSearchParams(nextParams, { replace: true });
+  }, [filters, setSearchParams]);
 
   const fetchCars = useCallback(async () => {
     setIsLoading(true);
