@@ -62,6 +62,26 @@ const templates = {
       </div>
     `,
   }),
+
+  otp: (data) => ({
+    subject: 'Your DriveEasy Verification Code',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:#1a1a2e;padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+          <h1 style="color:#e94560;margin:0;">DriveEasy</h1>
+          <p style="color:#ccc;margin:5px 0 0;">Secure Verification</p>
+        </div>
+        <div style="background:#fff;padding:30px;border-radius:0 0 12px 12px;border:1px solid #eee;text-align:center;">
+          <h2>Hello, ${data.name || 'User'}!</h2>
+          <p>Here is your 6-digit verification code to access your DriveEasy account:</p>
+          <div style="font-size:32px;font-weight:bold;letter-spacing:4px;color:#e94560;margin:20px 0;padding:15px;background:#f9f9f9;border-radius:8px;display:inline-block;">
+            ${data.otp}
+          </div>
+          <p style="color:#666;font-size:0.9em;">This code is valid for 10 minutes. Please do not share it with anyone.</p>
+        </div>
+      </div>
+    `,
+  }),
 };
 
 exports.sendEmail = async ({ to, subject, template, data }) => {
