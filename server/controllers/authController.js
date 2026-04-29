@@ -87,7 +87,8 @@ if (phone && !/^[6-9]\d{9}$/.test(phone)) {
       success: true,
       message: 'Account created successfully. OTP sent to your email.',
       requiresOTP: true,
-      email: user.email
+      email: user.email,
+      developmentOtp: otp
     });
   } catch (error) {
     next(error);
@@ -140,7 +141,8 @@ exports.login = async (req, res, next) => {
       success: true,
       message: 'OTP sent to your email. Please verify to continue.',
       requiresOTP: true,
-      email: user.email
+      email: user.email,
+      developmentOtp: otp
     });
   } catch (error) {
     next(error);
@@ -269,7 +271,11 @@ exports.forgotPassword = async (req, res, next) => {
         logger.info(`[Development Fallback] Reset OTP for ${user.email} is: ${otp}`);
       });
 
-    res.json({ success: true, message: 'If that email is registered, a password reset OTP has been sent.' });
+    res.json({ 
+      success: true, 
+      message: 'If that email is registered, a password reset OTP has been sent.',
+      developmentOtp: otp
+    });
   } catch (error) {
     next(error);
   }

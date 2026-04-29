@@ -20,9 +20,12 @@ export default function ForgotPassword() {
     if (!email) return;
     setIsLoading(true);
     try {
-      await authAPI.forgotPassword({ email: email.trim().toLowerCase() });
-      toast.success('If the email is registered, an OTP has been sent.');
+      const res = await authAPI.forgotPassword({ email: email.trim().toLowerCase() });
+      toast.success(res.data.message || 'If the email is registered, an OTP has been sent.');
       setOtpStep(true);
+      if (res.data.developmentOtp) {
+        setTimeout(() => toast(`🧪 Demo Mode: Your Reset OTP is ${res.data.developmentOtp}`, { duration: 10000, icon: '🔑' }), 1000);
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to send OTP');
     } finally {

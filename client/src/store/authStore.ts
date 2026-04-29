@@ -36,19 +36,20 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ isLoading: true });
         try {
-          const res = await authAPI.login({ email, password });
-          if (res.data.requiresOTP) {
-            toast.success(res.data.message || 'OTP sent to your email');
-            return res.data;
+          const { data } = await authAPI.login({ email, password });
+          if (data.requiresOTP) {
+            set({ isLoading: false });
+            return { requiresOTP: true, email: data.email, developmentOtp: data.developmentOtp };
           }
-          // Fallback if OTP is disabled or legacy behavior
-          const { token, user } = res.data;
+          const { token, user } = data;
           localStorage.setItem('token', token);
-          set({ user, token, isAuthenticated: true });
+          set({ user, token, isAuthenticated: true, isLoading: false });
           toast.success(`Welcome back, ${user.name}!`);
           return { requiresOTP: false };
-        } finally {
+        } catch (error: any) {
           set({ isLoading: false });
+          toast.error(error.response?.data?.error || 'Login failed');
+          throw error;
         }
       },
 
@@ -65,21 +66,20 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (data) => {
-        set({ isLoading: true });
+      register: async (userData) => {
+        set({ isLoading: true, error: null });
         try {
-          const res = await authAPI.register(data);
-          if (res.data.requiresOTP) {
-            toast.success(res.data.message || 'OTP sent to your email');
-            return res.data;
+          const { data } = await authAPI.register(userData);
+          if (data.requiresOTP) {
+            set({ isLoading: false });
+            return { requiresOTP: true, email: data.email, developmentOtp: data.developmentOtp };
           }
-          const { token, user } = res.data;
-          localStorage.setItem('token', token);
-          set({ user, token, isAuthenticated: true });
-          toast.success(`Welcome to DriveEasy, ${user.name}!`);
+          set({ user: data.user, isAuthenticated: true, isLoading: false });
           return { requiresOTP: false };
-        } finally {
-          set({ isLoading: false });
+        } catch (error: any) {
+          set({ error: error.response?.data?.error || 'Registration failed', isLoading: false });
+          toast.error(error.response?.data?.error || 'Registration failed');
+          throw error;
         }
       },
 

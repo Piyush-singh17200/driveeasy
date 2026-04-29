@@ -26,6 +26,9 @@ export function Login() {
         const res = await login(email.trim().toLowerCase(), password);
         if (res?.requiresOTP) {
           setOtpStep(true);
+          if (res.developmentOtp) {
+            setTimeout(() => toast(`🧪 Demo Mode: Your OTP is ${res.developmentOtp}`, { duration: 10000, icon: '🔑' }), 1000);
+          }
         } else if (res) {
           navigate('/dashboard');
         }
@@ -153,6 +156,9 @@ export function Register() {
       const res = await register({ ...form, email: form.email.trim().toLowerCase() });
       if (res?.requiresOTP) {
         setOtpStep(true);
+        if (res.developmentOtp) {
+          setTimeout(() => toast(`🧪 Demo Mode: Your OTP is ${res.developmentOtp}`, { duration: 10000, icon: '🔑' }), 1000);
+        }
       } else if (res) {
         navigate('/dashboard');
       }
