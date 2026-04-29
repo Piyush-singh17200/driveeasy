@@ -71,6 +71,8 @@ const userSchema = new mongoose.Schema({
   }],
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  loginOTP: String,
+  loginOTPExpire: Date,
   lastLogin: Date,
 }, {
   timestamps: true,
@@ -94,6 +96,8 @@ userSchema.methods.toJSON = function () {
   delete obj.password;
   delete obj.resetPasswordToken;
   delete obj.resetPasswordExpire;
+  delete obj.loginOTP;
+  delete obj.loginOTPExpire;
   return obj;
 };
 

@@ -9,7 +9,8 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requiresOTP: boolean; email?: string; message?: string }>;
+  verifyOTP: (email: string, otp: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
@@ -36,6 +37,25 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const res = await authAPI.login({ email, password });
+          if (res.data.requiresOTP) {
+            toast.success(res.data.message || 'OTP sent to your email');
+            return res.data;
+          }
+          // Fallback if OTP is disabled or legacy behavior
+          const { token, user } = res.data;
+          localStorage.setItem('token', token);
+          set({ user, token, isAuthenticated: true });
+          toast.success(`Welcome back, ${user.name}!`);
+          return { requiresOTP: false };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      verifyOTP: async (email, otp) => {
+        set({ isLoading: true });
+        try {
+          const res = await authAPI.verifyOTP({ email, otp });
           const { token, user } = res.data;
           localStorage.setItem('token', token);
           set({ user, token, isAuthenticated: true });

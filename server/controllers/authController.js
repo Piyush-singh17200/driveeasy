@@ -98,6 +98,62 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ error: 'Account deactivated. Contact support.' });
     }
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.loginOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    user.loginOTPExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save({ validateBeforeSave: false });
+
+    // Send OTP via email
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Your Login OTP',
+        template: 'otp', // Assuming a basic text fallback if template is missing
+        text: `Your OTP for login is: ${otp}. It will expire in 10 minutes.`,
+        data: { name: user.name, otp },
+      });
+      // In development, also log it to console so you can test easily without real SMTP
+      logger.info(`[Development] OTP for ${user.email} is: ${otp}`);
+    } catch (err) {
+      logger.error('Failed to send OTP email:', err);
+      logger.info(`[Development Fallback] OTP for ${user.email} is: ${otp}`);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent to your email. Please verify to continue.',
+      requiresOTP: true,
+      email: user.email
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Please provide email and OTP' });
+    }
+
+    const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    
+    const user = await User.findOne({
+      email,
+      loginOTP: hashedOTP,
+      loginOTPExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid or expired OTP' });
+    }
+
+    // Clear OTP fields
+    user.loginOTP = undefined;
+    user.loginOTPExpire = undefined;
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 

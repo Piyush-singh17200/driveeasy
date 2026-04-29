@@ -2,22 +2,35 @@ import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Car, Mail, Lock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Car, Mail, Lock, Loader2, KeyRound } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
+  const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading } = useAuthStore();
+  const { login, verifyOTP, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login(email.trim().toLowerCase(), password);
-      navigate('/dashboard');
-    } catch {}
+    if (otpStep) {
+      try {
+        await verifyOTP(email.trim().toLowerCase(), otp);
+        navigate('/dashboard');
+      } catch {}
+    } else {
+      try {
+        const res = await login(email.trim().toLowerCase(), password);
+        if (res?.requiresOTP) {
+          setOtpStep(true);
+        } else if (res) {
+          navigate('/dashboard');
+        }
+      } catch {}
+    }
   };
   return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-20">
@@ -37,32 +50,51 @@ export function Login() {
 
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="label">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                <input type="email" className="input pl-10" placeholder="you@example.com"
-                  value={email} onChange={e => setEmail(e.target.value)} required />
+            {!otpStep ? (
+              <>
+                <div>
+                  <label className="label">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                    <input type="email" className="input pl-10" placeholder="you@example.com"
+                      value={email} onChange={e => setEmail(e.target.value)} required />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                    <input type={showPassword ? 'text' : 'password'} className="input pl-10 pr-10" placeholder="••••••••"
+                      value={password} onChange={e => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">Forgot password?</Link>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="label">Enter OTP</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                  <input type="text" className="input pl-10 tracking-widest font-mono" placeholder="123456" maxLength={6}
+                    value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} required autoFocus />
+                </div>
+                <p className="text-xs text-white/40 mt-2">A 6-digit code has been sent to {email}</p>
               </div>
-            </div>
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                <input type={showPassword ? 'text' : 'password'} className="input pl-10 pr-10" placeholder="••••••••"
-                  value={password} onChange={e => setPassword(e.target.value)} required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">Forgot password?</Link>
-            </div>
+            )}
             <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center py-3.5">
-              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Signing in...</> : 'Sign In'}
+              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> {otpStep ? 'Verifying...' : 'Signing in...'}</> : (otpStep ? 'Verify OTP' : 'Sign In')}
             </button>
+            {otpStep && (
+              <button type="button" onClick={() => setOtpStep(false)} className="w-full text-center text-sm text-white/40 hover:text-white mt-2 transition-colors">
+                Back to login
+              </button>
+            )}
           </form>
 
           <div className="mt-6 pt-6 border-t border-white/5 text-center">

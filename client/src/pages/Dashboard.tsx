@@ -4,9 +4,9 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   BarChart3, Calendar, Car, CheckCircle, Clock, IndianRupee,
-  Loader2, Shield, User as UserIcon, Users, XCircle
+  Loader2, Shield, User as UserIcon, Users, XCircle, Lock
 } from 'lucide-react';
-import { adminAPI, bookingsAPI, carsAPI } from '../utils/api';
+import { adminAPI, bookingsAPI, carsAPI, authAPI } from '../utils/api';
 import { useAuthStore } from '../store/authStore';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -337,7 +337,9 @@ export function AdminDashboard() {
 export function Profile() {
   const { user, updateProfile } = useAuthStore();
   const [form, setForm] = useState({ name: user?.name || '', phone: user?.phone || '' });
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [isPwdSaving, setIsPwdSaving] = useState(false);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,8 +355,31 @@ export function Profile() {
     }
   };
 
+  const savePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwdForm.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+    if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    setIsPwdSaving(true);
+    try {
+      await authAPI.changePassword({ 
+        currentPassword: pwdForm.currentPassword, 
+        newPassword: pwdForm.newPassword 
+      });
+      toast.success('Password updated successfully');
+      setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } finally {
+      setIsPwdSaving(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-dark-900 pt-24 pb-16">
+    <div className="min-h-screen bg-dark-900 pt-24 pb-16 space-y-8">
       <form onSubmit={save} className="max-w-xl mx-auto px-4 sm:px-6">
         <h1 className="font-display text-3xl font-bold text-white mb-6">Profile Settings</h1>
         <div className="card p-6 space-y-4">
@@ -366,9 +391,31 @@ export function Profile() {
             <label className="label">Phone</label>
             <input className="input" value={form.phone} maxLength={10} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))} />
           </div>
-          <button disabled={isSaving} className="btn-primary justify-center">
+          <button disabled={isSaving} className="btn-primary w-full justify-center">
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
             Save Profile
+          </button>
+        </div>
+      </form>
+
+      <form onSubmit={savePassword} className="max-w-xl mx-auto px-4 sm:px-6">
+        <h2 className="font-display text-2xl font-bold text-white mb-6">Change Password</h2>
+        <div className="card p-6 space-y-4">
+          <div>
+            <label className="label">Current Password</label>
+            <input type="password" required className="input" value={pwdForm.currentPassword} onChange={e => setPwdForm(f => ({ ...f, currentPassword: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label">New Password</label>
+            <input type="password" required className="input" minLength={6} value={pwdForm.newPassword} onChange={e => setPwdForm(f => ({ ...f, newPassword: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label">Confirm New Password</label>
+            <input type="password" required className="input" minLength={6} value={pwdForm.confirmPassword} onChange={e => setPwdForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+          </div>
+          <button disabled={isPwdSaving} className="btn-primary w-full justify-center bg-dark-600 hover:bg-dark-500 text-white border border-white/10">
+            {isPwdSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+            Update Password
           </button>
         </div>
       </form>
