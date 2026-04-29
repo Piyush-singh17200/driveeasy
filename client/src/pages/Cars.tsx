@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, SortAsc, Grid2X2, List } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { carsAPI } from '../utils/api';
 import { Car, CarFilters } from '../types';
 import CarCard from '../components/cars/CarCard';
@@ -32,6 +32,33 @@ export default function Cars() {
     page: 1,
     limit: 12,
   });
+
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      city: searchParams.get('city') || undefined,
+      category: searchParams.get('category') || undefined,
+      page: Number(searchParams.get('page')) || 1,
+      limit: 12,
+    }));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (filters.city) nextParams.set('city', filters.city);
+    if (filters.category) nextParams.set('category', filters.category);
+    if (filters.fuel) nextParams.set('fuel', filters.fuel);
+    if (filters.transmission) nextParams.set('transmission', filters.transmission);
+    if (filters.minPrice) nextParams.set('minPrice', String(filters.minPrice));
+    if (filters.maxPrice) nextParams.set('maxPrice', String(filters.maxPrice));
+    if (filters.seats) nextParams.set('seats', String(filters.seats));
+    if (filters.available !== undefined) nextParams.set('available', String(filters.available));
+    if (filters.page && filters.page > 1) nextParams.set('page', String(filters.page));
+
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [filters, searchParams, setSearchParams]);
 
   const fetchCars = useCallback(async () => {
     setIsLoading(true);
