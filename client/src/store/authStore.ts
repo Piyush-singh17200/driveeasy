@@ -9,9 +9,10 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ requiresOTP: boolean; email?: string; message?: string }>;
+  error: string | null;
+  login: (email: string, password: string) => Promise<{ requiresOTP: boolean; email?: string; message?: string; developmentOtp?: string }>;
   verifyOTP: (email: string, otp: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<{ requiresOTP: boolean; email?: string; message?: string }>;
+  register: (data: RegisterData) => Promise<{ requiresOTP: boolean; email?: string; message?: string; developmentOtp?: string }>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       isAuthenticated: false,
+      error: null,
 
       login: async (email, password) => {
         set({ isLoading: true });
