@@ -7,6 +7,7 @@ import { Calendar, MapPin, Star, CheckCircle, XCircle, Clock, Loader2, ArrowLeft
 import { bookingsAPI } from '../utils/api';
 import { Booking } from '../types';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -23,8 +24,10 @@ export default function BookingDetail() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState({ rating: 5, comment: '' });
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +58,19 @@ export default function BookingDetail() {
     } catch {}
   };
 
+  const updateStatus = async (status: string) => {
+    setIsUpdating(true);
+    try {
+      await bookingsAPI.updateBookingStatus(id!, status);
+      setBooking(b => b ? { ...b, status: status as any } : b);
+      toast.success(`Booking marked as ${status}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) return (
     <div className="min-h-screen bg-dark-900 pt-24 flex items-center justify-center">
       <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
@@ -70,8 +86,12 @@ export default function BookingDetail() {
   );
 
   const car = booking.car as any;
-  const canCancel = ['pending', 'confirmed'].includes(booking.status);
-  const canReview = booking.status === 'completed' && !booking.review;
+  const bookingUser = booking.user as any;
+  const isOwner = car?.owner === user?._id || car?.owner?._id === user?._id;
+  const isAdmin = user?.role === 'admin';
+  const isCustomer = bookingUser?._id === user?._id;
+  const canCancel = ['pending', 'confirmed'].includes(booking.status) && (isCustomer || isAdmin);
+  const canReview = booking.status === 'completed' && !booking.review && isCustomer;
 
   return (
     <div className="min-h-screen bg-dark-900 pt-24 pb-16">
@@ -151,6 +171,29 @@ export default function BookingDetail() {
             </div>
           </div>
 
+          {/* Customer Info (Owner/Admin only) */}
+          {(isOwner || isAdmin) && bookingUser && (
+            <div className="card p-5">
+              <h3 className="font-semibold text-white mb-4">Customer Details</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between text-white/60">
+                  <span>Name</span>
+                  <span className="text-white">{bookingUser.name}</span>
+                </div>
+                <div className="flex justify-between text-white/60">
+                  <span>Email</span>
+                  <span className="text-white">{bookingUser.email}</span>
+                </div>
+                {bookingUser.phone && (
+                  <div className="flex justify-between text-white/60">
+                    <span>Phone</span>
+                    <span className="text-white">{bookingUser.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Special Requests */}
           {booking.specialRequests && (
             <div className="card p-5">
@@ -185,6 +228,26 @@ export default function BookingDetail() {
               <button onClick={() => setShowReview(true)}
                 className="flex-1 py-3 btn-primary justify-center">
                 <Star className="w-4 h-4" /> Leave Review
+              </button>
+            )}
+            {(isOwner || isAdmin) && booking.status === 'pending' && (
+              <>
+                <button onClick={() => updateStatus('confirmed')} disabled={isUpdating} className="flex-1 py-3 btn-primary justify-center bg-blue-500 hover:bg-blue-600">
+                  Accept Booking
+                </button>
+                <button onClick={() => updateStatus('rejected')} disabled={isUpdating} className="flex-1 py-3 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl text-sm font-medium transition-colors">
+                  Reject
+                </button>
+              </>
+            )}
+            {(isOwner || isAdmin) && booking.status === 'confirmed' && (
+              <button onClick={() => updateStatus('active')} disabled={isUpdating} className="flex-1 py-3 btn-primary justify-center bg-green-500 hover:bg-green-600">
+                Mark as Active
+              </button>
+            )}
+            {(isOwner || isAdmin) && booking.status === 'active' && (
+              <button onClick={() => updateStatus('completed')} disabled={isUpdating} className="flex-1 py-3 btn-primary justify-center">
+                Complete Booking
               </button>
             )}
           </div>

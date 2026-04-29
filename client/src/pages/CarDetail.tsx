@@ -81,6 +81,8 @@ export default function CarDetail() {
   }
 };
 
+  const isOwner = user && (car.owner === user._id || (car.owner as any)?._id === user._id || car.owner === (user as any).id || (car.owner as any)?._id === (user as any).id);
+
   if (isLoading) return (
     <div className="min-h-screen bg-dark-900 pt-24 flex items-center justify-center">
       <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
@@ -220,7 +222,20 @@ export default function CarDetail() {
           <div className="lg:col-span-2">
             <div className="sticky top-24">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
-                <h2 className="font-display text-xl font-bold text-white mb-5">Book This Car</h2>
+                {isOwner ? (
+                  <>
+                    <h2 className="font-display text-xl font-bold text-white mb-5">Owner Management</h2>
+                    <div className="bg-dark-600 rounded-xl p-4 text-center mb-4">
+                      <p className="text-white font-medium">You own this car</p>
+                      <p className="text-white/50 text-sm mt-1">Manage this car from your dashboard</p>
+                    </div>
+                    <Link to="/owner" className="btn-primary w-full justify-center py-3">
+                      Go to Owner Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="font-display text-xl font-bold text-white mb-5">Book This Car</h2>
 
                 {/* Date Pickers */}
                 <div className="space-y-3 mb-4">
@@ -306,6 +321,8 @@ export default function CarDetail() {
                     </div>
                   ))}
                 </div>
+                </>
+                )}
               </motion.div>
             </div>
           </div>

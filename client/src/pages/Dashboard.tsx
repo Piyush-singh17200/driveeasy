@@ -193,9 +193,7 @@ export function OwnerDashboard() {
               <input className="input" placeholder="Seats" value={form.seats} onChange={e => update('seats', e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <select className="input" value={form.city} onChange={e => update('city', e.target.value)}>
-                {['Mumbai', 'Bangalore', 'Delhi', 'Pune', 'Chennai', 'Hyderabad', 'Goa'].map(v => <option key={v} className="bg-dark-600">{v}</option>)}
-              </select>
+              <input className="input" placeholder="City" value={form.city} onChange={e => update('city', e.target.value)} required />
               <input className="input" placeholder="State" value={form.state} onChange={e => update('state', e.target.value)} />
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -266,7 +264,7 @@ function BookingTable({ bookings, title, showCustomer }: { bookings: any[]; titl
           </thead>
           <tbody>
             {bookings.map(booking => (
-              <tr key={booking._id} className="border-b border-white/5">
+              <tr key={booking._id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/bookings/${booking._id}`}>
                 <td className="px-3 py-3 text-sm text-white">{booking.car?.brand} {booking.car?.model}</td>
                 {showCustomer && (
                   <td className="px-3 py-3 text-sm text-white/80">
