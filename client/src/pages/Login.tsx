@@ -121,7 +121,9 @@ export function Register() {
   const defaultRole = searchParams.get('role') || 'user';
   const [form, setForm] = useState({ name: '', email: '', password: '', role: defaultRole, phone: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const { register, isLoading } = useAuthStore();
+  const [otpStep, setOtpStep] = useState(false);
+  const [otp, setOtp] = useState('');
+  const { register, verifyOTP, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const update = (key: string, val: string) => {
@@ -131,6 +133,14 @@ export function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (otpStep) {
+      try {
+        await verifyOTP(form.email.trim().toLowerCase(), otp);
+        navigate('/dashboard');
+      } catch {}
+      return;
+    }
+
     if (form.phone && !/^[6-9]\d{9}$/.test(form.phone)) {
       toast.error('Phone must be exactly 10 digits starting with 6, 7, 8, or 9');
       return;
@@ -140,8 +150,12 @@ export function Register() {
       return;
     }
     try {
-      await register({ ...form, email: form.email.trim().toLowerCase() });
-      navigate('/dashboard');
+      const res = await register({ ...form, email: form.email.trim().toLowerCase() });
+      if (res?.requiresOTP) {
+        setOtpStep(true);
+      } else if (res) {
+        navigate('/dashboard');
+      }
     } catch {}
   };
 
@@ -162,57 +176,79 @@ export function Register() {
         </div>
 
         <div className="card p-8">
-          {/* Role Toggle */}
-          <div className="flex gap-2 p-1 bg-dark-600 rounded-xl mb-6">
-            {[['user', '🧑 I want to rent'], ['owner', '🚗 I own cars']].map(([val, label]) => (
-              <button key={val} type="button" onClick={() => update('role', val)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  form.role === val ? 'bg-primary-500 text-white shadow-lg' : 'text-white/50 hover:text-white'
-                }`}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {[
-              { key: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe' },
-              { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
-              { key: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '9876543210' },
-            ].map(({ key, label, type, placeholder }) => (
-              <div key={key}>
-                <label className="label">{label}</label>
-                <input type={type} className="input" placeholder={placeholder}
-                  value={form[key as keyof typeof form]} onChange={e => update(key, e.target.value)}
-                  required={key !== 'phone'} />
+          {!otpStep ? (
+            <>
+              {/* Role Toggle */}
+              <div className="flex gap-2 p-1 bg-dark-600 rounded-xl mb-6">
+                {[['user', '🧑 I want to rent'], ['owner', '🚗 I own cars']].map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => update('role', val)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      form.role === val ? 'bg-primary-500 text-white shadow-lg' : 'text-white/50 hover:text-white'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
               </div>
-            ))}
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} className="input pr-10" placeholder="Min. 6 characters"
-                  value={form.password} onChange={e => update('password', e.target.value)} minLength={6} required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {[
+                  { key: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe' },
+                  { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
+                  { key: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '9876543210' },
+                ].map(({ key, label, type, placeholder }) => (
+                  <div key={key}>
+                    <label className="label">{label}</label>
+                    <input type={type} className="input" placeholder={placeholder}
+                      value={form[key as keyof typeof form]} onChange={e => update(key, e.target.value)}
+                      required={key !== 'phone'} />
+                  </div>
+                ))}
+                <div>
+                  <label className="label">Password</label>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} className="input pr-10" placeholder="Min. 6 characters"
+                      value={form.password} onChange={e => update('password', e.target.value)} minLength={6} required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center py-3.5">
+                  {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Creating account...</> : 'Create Account'}
                 </button>
+              </form>
+
+              <p className="text-xs text-white/30 text-center mt-4">
+                By signing up, you agree to our Terms of Service & Privacy Policy
+              </p>
+
+              <div className="mt-6 pt-6 border-t border-white/5 text-center">
+                <p className="text-white/40 text-sm">
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">Sign in</Link>
+                </p>
               </div>
-            </div>
-            <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center py-3.5">
-              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Creating account...</> : 'Create Account'}
-            </button>
-          </form>
-
-          <p className="text-xs text-white/30 text-center mt-4">
-            By signing up, you agree to our Terms of Service & Privacy Policy
-          </p>
-
-          <div className="mt-6 pt-6 border-t border-white/5 text-center">
-            <p className="text-white/40 text-sm">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">Sign in</Link>
-            </p>
-          </div>
+            </>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="label">Enter OTP</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                  <input type="text" className="input pl-10 tracking-widest font-mono" placeholder="123456" maxLength={6}
+                    value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} required autoFocus />
+                </div>
+                <p className="text-xs text-white/40 mt-2">A 6-digit verification code has been sent to {form.email}</p>
+              </div>
+              <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center py-3.5">
+                {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify & Continue'}
+              </button>
+              <button type="button" onClick={() => setOtpStep(false)} className="w-full text-center text-sm text-white/40 hover:text-white mt-2 transition-colors">
+                Back to registration
+              </button>
+            </form>
+          )}
         </div>
       </motion.div>
     </div>

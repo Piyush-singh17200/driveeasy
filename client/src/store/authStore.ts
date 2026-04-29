@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ requiresOTP: boolean; email?: string; message?: string }>;
   verifyOTP: (email: string, otp: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<{ requiresOTP: boolean; email?: string; message?: string }>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
@@ -69,10 +69,15 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const res = await authAPI.register(data);
+          if (res.data.requiresOTP) {
+            toast.success(res.data.message || 'OTP sent to your email');
+            return res.data;
+          }
           const { token, user } = res.data;
           localStorage.setItem('token', token);
           set({ user, token, isAuthenticated: true });
           toast.success(`Welcome to DriveEasy, ${user.name}!`);
+          return { requiresOTP: false };
         } finally {
           set({ isLoading: false });
         }

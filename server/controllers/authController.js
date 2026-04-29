@@ -63,14 +63,32 @@ if (phone && !/^[6-9]\d{9}$/.test(phone)) {
       userAgent: req.get('User-Agent'),
     });
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.loginOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    user.loginOTPExpire = Date.now() + 10 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+
+    // Send email without awaiting to prevent hanging the request
     sendEmail({
       to: email,
-      subject: 'Welcome to DriveEasy!',
-      template: 'welcome',
-      data: { name },
-    }).catch(err => logger.error('Welcome email failed:', err));
+      subject: 'Welcome to DriveEasy! Verify your Email',
+      template: 'otp', // fallback to text if missing
+      text: `Welcome to DriveEasy! Your OTP is: ${otp}. It will expire in 10 minutes.`,
+      data: { name, otp },
+    })
+      .then(() => logger.info(`[Development] Registration OTP for ${user.email} is: ${otp}`))
+      .catch(err => {
+        logger.error('Registration email failed:', err);
+        logger.info(`[Development Fallback] Registration OTP for ${user.email} is: ${otp}`);
+      });
 
-    sendTokenResponse(user, 201, res);
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully. OTP sent to your email.',
+      requiresOTP: true,
+      email: user.email
+    });
   } catch (error) {
     next(error);
   }
@@ -104,21 +122,19 @@ exports.login = async (req, res, next) => {
     user.loginOTPExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false });
 
-    // Send OTP via email
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: 'Your Login OTP',
-        template: 'otp', // Assuming a basic text fallback if template is missing
-        text: `Your OTP for login is: ${otp}. It will expire in 10 minutes.`,
-        data: { name: user.name, otp },
+    // Send OTP via email without awaiting to prevent hanging
+    sendEmail({
+      to: user.email,
+      subject: 'Your Login OTP',
+      template: 'otp', // Assuming a basic text fallback if template is missing
+      text: `Your OTP for login is: ${otp}. It will expire in 10 minutes.`,
+      data: { name: user.name, otp },
+    })
+      .then(() => logger.info(`[Development] OTP for ${user.email} is: ${otp}`))
+      .catch(err => {
+        logger.error('Failed to send OTP email:', err);
+        logger.info(`[Development Fallback] OTP for ${user.email} is: ${otp}`);
       });
-      // In development, also log it to console so you can test easily without real SMTP
-      logger.info(`[Development] OTP for ${user.email} is: ${otp}`);
-    } catch (err) {
-      logger.error('Failed to send OTP email:', err);
-      logger.info(`[Development Fallback] OTP for ${user.email} is: ${otp}`);
-    }
 
     res.status(200).json({
       success: true,
