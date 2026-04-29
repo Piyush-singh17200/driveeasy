@@ -45,8 +45,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateProfile: (data: any) => api.put('/auth/profile', data),
   changePassword: (data: any) => api.put('/auth/change-password', data),
-  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
-  resetPassword: (token: string, password: string) => api.put(`/auth/reset-password/${token}`, { password }),
+  forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
+  resetPassword: (token: string, data: any) => api.put(`/auth/reset-password/${token}`, data),
 };
 
 // ─── Cars API ──────────────────────────────────────────────────────────────────
