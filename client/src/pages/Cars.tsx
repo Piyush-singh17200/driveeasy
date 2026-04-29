@@ -34,13 +34,24 @@ export default function Cars() {
   });
 
   useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      city: searchParams.get('city') || undefined,
-      category: searchParams.get('category') || undefined,
-      page: Number(searchParams.get('page')) || 1,
-      limit: 12,
-    }));
+    setFilters(prev => {
+      const city = searchParams.get('city') || undefined;
+      const category = searchParams.get('category') || undefined;
+      const page = Number(searchParams.get('page')) || 1;
+      
+      // Only update if there's an actual change to prevent re-render loops
+      if (prev.city === city && prev.category === category && prev.page === page) {
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        city,
+        category,
+        page,
+        limit: 12,
+      };
+    });
   }, [searchParams]);
 
   useEffect(() => {
@@ -55,7 +66,12 @@ export default function Cars() {
     if (filters.available !== undefined) nextParams.set('available', String(filters.available));
     if (filters.page && filters.page > 1) nextParams.set('page', String(filters.page));
 
-    if (nextParams.toString() !== searchParams.toString()) {
+    // Sort keys to ensure stable comparison
+    nextParams.sort();
+    const currentParams = new URLSearchParams(searchParams);
+    currentParams.sort();
+
+    if (nextParams.toString() !== currentParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
   }, [filters, searchParams, setSearchParams]);
