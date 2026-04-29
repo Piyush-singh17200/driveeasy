@@ -104,8 +104,15 @@ export function OwnerDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [cars, setCars] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: '', brand: '', model: '', year: new Date().getFullYear().toString(),
+    category: 'SUV', transmission: 'Automatic', fuel: 'Petrol', seats: '5',
+    pricePerDay: '', city: 'Mumbai', state: 'Maharashtra', imageUrl: '', description: '',
+  });
 
-  useEffect(() => {
+  const loadOwnerData = () => {
+    setIsLoading(true);
     Promise.all([
       bookingsAPI.getOwnerBookings({ limit: 100 }),
       carsAPI.getOwnerCars(),
@@ -113,7 +120,40 @@ export function OwnerDashboard() {
       setBookings(bookRes.data.bookings || []);
       setCars(carRes.data.cars || []);
     }).finally(() => setIsLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadOwnerData(); }, []);
+
+  const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
+
+  const addCar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const data = new FormData();
+      Object.entries({
+        name: form.name,
+        brand: form.brand,
+        model: form.model,
+        year: form.year,
+        category: form.category,
+        transmission: form.transmission,
+        fuel: form.fuel,
+        seats: form.seats,
+        pricePerDay: form.pricePerDay,
+        description: form.description,
+        'location[city]': form.city,
+        'location[state]': form.state,
+      }).forEach(([key, value]) => data.append(key, value));
+      if (form.imageUrl) data.append('images', JSON.stringify([{ url: form.imageUrl, isPrimary: true }]));
+      await carsAPI.createCar(data);
+      toast.success('Car added successfully! Waiting for admin approval.');
+      setForm(f => ({ ...f, name: '', brand: '', model: '', pricePerDay: '', imageUrl: '', description: '' }));
+      loadOwnerData();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const totalEarnings = bookings
     .filter(b => b.paymentStatus === 'paid' || b.status === 'completed' || b.status === 'confirmed')
@@ -139,15 +179,52 @@ export function OwnerDashboard() {
           <StatCard label="Active Now" value={bookings.filter(b => ['active', 'confirmed'].includes(b.status)).length} icon={Clock} />
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="card p-5">
-            <h3 className="font-semibold text-white mb-4">My Cars</h3>
-            <div className="space-y-3">
-              {cars.map(car => <CarRow key={car._id} car={car} />)}
-              {cars.length === 0 && <p className="text-white/40 text-sm text-center py-8">No cars listed yet.</p>}
+        <div className="grid xl:grid-cols-3 gap-6">
+          <motion.form onSubmit={addCar} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card p-5 xl:col-span-1 space-y-3">
+            <h2 className="font-semibold text-white mb-2">List a New Car</h2>
+            {[
+              ['name', 'Car Name'], ['brand', 'Brand'], ['model', 'Model'], ['pricePerDay', 'Price / Day'],
+              ['imageUrl', 'Image URL'],
+            ].map(([key, label]) => (
+              <input key={key} className="input" placeholder={label} value={(form as any)[key]} onChange={e => update(key, e.target.value)} required={key !== 'imageUrl'} />
+            ))}
+            <div className="grid grid-cols-2 gap-3">
+              <input className="input" placeholder="Year" value={form.year} onChange={e => update('year', e.target.value)} />
+              <input className="input" placeholder="Seats" value={form.seats} onChange={e => update('seats', e.target.value)} />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <select className="input" value={form.city} onChange={e => update('city', e.target.value)}>
+                {['Mumbai', 'Bangalore', 'Delhi', 'Pune', 'Chennai', 'Hyderabad', 'Goa'].map(v => <option key={v} className="bg-dark-600">{v}</option>)}
+              </select>
+              <input className="input" placeholder="State" value={form.state} onChange={e => update('state', e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <select className="input" value={form.category} onChange={e => update('category', e.target.value)}>
+                {['Sedan', 'SUV', 'Hatchback', 'Luxury', 'Sports', 'Electric', 'Van'].map(v => <option key={v} className="bg-dark-600">{v}</option>)}
+              </select>
+              <select className="input" value={form.fuel} onChange={e => update('fuel', e.target.value)}>
+                {['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'].map(v => <option key={v} className="bg-dark-600">{v}</option>)}
+              </select>
+              <select className="input" value={form.transmission} onChange={e => update('transmission', e.target.value)}>
+                {['Manual', 'Automatic', 'CVT'].map(v => <option key={v} className="bg-dark-600">{v}</option>)}
+              </select>
+            </div>
+            <textarea className="input resize-none" rows={3} placeholder="Description" value={form.description} onChange={e => update('description', e.target.value)} />
+            <button disabled={isSaving} className="btn-primary w-full justify-center">
+              {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</> : 'List Car'}
+            </button>
+          </motion.form>
+
+          <div className="xl:col-span-2 space-y-6">
+            <div className="card p-5">
+              <h3 className="font-semibold text-white mb-4">My Cars</h3>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {cars.map(car => <CarRow key={car._id} car={car} />)}
+                {cars.length === 0 && <p className="text-white/40 text-sm text-center py-8">No cars listed yet.</p>}
+              </div>
+            </div>
+            <BookingTable bookings={bookings.slice(0, 8)} title="Recent Bookings" showCustomer={true} />
           </div>
-          <BookingTable bookings={bookings.slice(0, 8)} title="Recent Bookings" />
         </div>
       </div>
     </div>
@@ -176,7 +253,7 @@ function CarRow({ car, onApprove }: { car: any; onApprove?: (id: string, approve
   );
 }
 
-function BookingTable({ bookings, title }: { bookings: any[]; title: string }) {
+function BookingTable({ bookings, title, showCustomer }: { bookings: any[]; title: string; showCustomer?: boolean }) {
   return (
     <div className="card p-5">
       <h3 className="font-semibold text-white mb-4">{title}</h3>
@@ -184,14 +261,21 @@ function BookingTable({ bookings, title }: { bookings: any[]; title: string }) {
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
-              {['Car', 'Amount', 'Status'].map(h => <th key={h} className="text-left px-3 py-3 text-xs font-medium text-white/40 uppercase">{h}</th>)}
+              {['Car', ...(showCustomer ? ['Customer'] : []), 'Amount', 'Payment', 'Status'].map(h => <th key={h} className="text-left px-3 py-3 text-xs font-medium text-white/40 uppercase">{h}</th>)}
             </tr>
           </thead>
           <tbody>
             {bookings.map(booking => (
               <tr key={booking._id} className="border-b border-white/5">
                 <td className="px-3 py-3 text-sm text-white">{booking.car?.brand} {booking.car?.model}</td>
+                {showCustomer && (
+                  <td className="px-3 py-3 text-sm text-white/80">
+                    <div className="font-medium">{booking.user?.name || 'Unknown'}</div>
+                    <div className="text-xs text-white/40">{booking.user?.email}</div>
+                  </td>
+                )}
                 <td className="px-3 py-3 text-sm text-primary-400">₹{booking.totalAmount?.toLocaleString()}</td>
+                <td className="px-3 py-3 text-sm text-white/60 capitalize">{booking.paymentStatus || 'Pending'}</td>
                 <td className="px-3 py-3"><span className={`badge ${STATUS_STYLES[booking.status]}`}>{booking.status}</span></td>
               </tr>
             ))}
