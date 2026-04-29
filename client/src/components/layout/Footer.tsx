@@ -13,7 +13,7 @@ export default function Footer() {
               </div>
               <span className="font-display text-lg font-bold">Drive<span className="text-primary-500">Easy</span></span>
             </Link>
-            <p className="text-sm text-white/40 leading-relaxed">
+            <p className="text-sm text-white/60 leading-relaxed">
               Smart car rental platform with real-time availability and AI-powered recommendations.
             </p>
             <div className="flex items-center gap-3 mt-4">
@@ -28,14 +28,14 @@ export default function Footer() {
           {[
             { title: 'Browse', links: [['All Cars', '/cars'], ['SUVs', '/cars?category=SUV'], ['Sedans', '/cars?category=Sedan'], ['Electric', '/cars?category=Electric']] },
             { title: 'Platform', links: [['For Owners', '/register?role=owner'], ['Dashboard', '/dashboard'], ['Bookings', '/bookings'], ['AI Assistant', '/cars']] },
-            { title: 'Support', links: [['Help Center', '#'], ['Contact Us', '#'], ['Privacy Policy', '#'], ['Terms of Service', '#']] },
+            { title: 'Support', links: [['Help Center', '/contact'], ['Contact Us', '/contact'], ['Privacy Policy', '/about'], ['Terms of Service', '/about']] },
           ].map(section => (
             <div key={section.title}>
               <h4 className="text-sm font-semibold text-white/80 mb-4 uppercase tracking-wider">{section.title}</h4>
               <ul className="space-y-2">
                 {section.links.map(([label, href]) => (
                   <li key={label}>
-                    <Link to={href} className="text-sm text-white/40 hover:text-primary-400 transition-colors">{label}</Link>
+                    <Link to={href} className="text-sm text-white/60 hover:text-primary-400 transition-colors">{label}</Link>
                   </li>
                 ))}
               </ul>
@@ -44,8 +44,8 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/30">© {new Date().getFullYear()} DriveEasy. All rights reserved.</p>
-          <div className="flex items-center gap-2 text-xs text-white/30">
+          <p className="text-xs text-white/50">© {new Date().getFullYear()} DriveEasy. All rights reserved.</p>
+          <div className="flex items-center gap-2 text-xs text-white/50">
             <Mail className="w-3 h-3" />
             <span>support@driveeasy.in</span>
           </div>
