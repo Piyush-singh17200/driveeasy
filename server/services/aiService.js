@@ -6,7 +6,18 @@ let openai = null;
 try {
   if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'sk-your_openai_api_key') {
     const OpenAI = require('openai');
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const options = { apiKey: process.env.OPENAI_API_KEY };
+    
+    // Support for OpenRouter if the key starts with sk-or-
+    if (process.env.OPENAI_API_KEY.startsWith('sk-or-')) {
+      options.baseURL = 'https://openrouter.ai/api/v1';
+      options.defaultHeaders = {
+        'HTTP-Referer': 'http://localhost:5173', // Optional, for OpenRouter rankings
+        'X-Title': 'DriveEasy Car Rental', // Optional, for OpenRouter rankings
+      };
+    }
+    
+    openai = new OpenAI(options);
   }
 } catch (e) {
   logger.warn('OpenAI not available');
