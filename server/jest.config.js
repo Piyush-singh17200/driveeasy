@@ -9,7 +9,7 @@ module.exports = {
     'middleware/**/*.js',
     '!**/node_modules/**',
   ],
-  setupFilesAfterFramework: [],
+  setupFilesAfterEnv: [],
   testTimeout: 30000,
   verbose: true,
 };

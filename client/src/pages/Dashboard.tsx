@@ -279,7 +279,17 @@ function CarRow({ car, onApprove }: { car: any; onApprove?: (id: string, approve
   );
 }
 
-function BookingTable({ bookings, title, showCustomer }: { bookings: any[]; title: string; showCustomer?: boolean }) {
+function BookingTable({
+  bookings,
+  title,
+  showCustomer,
+  onVerifyPayment,
+}: {
+  bookings: any[];
+  title: string;
+  showCustomer?: boolean;
+  onVerifyPayment?: (id: string, approved: boolean) => void;
+}) {
   return (
     <div className="card p-5">
       <h3 className="font-semibold text-white mb-4">{title}</h3>
@@ -287,12 +297,12 @@ function BookingTable({ bookings, title, showCustomer }: { bookings: any[]; titl
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
-              {['Car', ...(showCustomer ? ['Customer'] : []), 'Amount', 'Payment', 'Status'].map(h => <th key={h} className="text-left px-3 py-3 text-xs font-medium text-white/40 uppercase">{h}</th>)}
+              {['Car', ...(showCustomer ? ['Customer'] : []), 'Amount', 'Payment', 'Status', ...(onVerifyPayment ? ['Action'] : [])].map(h => <th key={h} className="text-left px-3 py-3 text-xs font-medium text-white/40 uppercase">{h}</th>)}
             </tr>
           </thead>
           <tbody>
             {bookings.map(booking => (
-              <tr key={booking._id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/bookings/${booking._id}`}>
+              <tr key={booking._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td className="px-3 py-3 text-sm text-white">{booking.car?.brand} {booking.car?.model}</td>
                 {showCustomer && (
                   <td className="px-3 py-3 text-sm text-white/80">
@@ -302,7 +312,19 @@ function BookingTable({ bookings, title, showCustomer }: { bookings: any[]; titl
                 )}
                 <td className="px-3 py-3 text-sm text-primary-400">₹{booking.totalAmount?.toLocaleString()}</td>
                 <td className="px-3 py-3 text-sm text-white/60 capitalize">{booking.paymentStatus || 'Pending'}</td>
-                <td className="px-3 py-3"><span className={`badge ${STATUS_STYLES[booking.status]}`}>{booking.status}</span></td>
+                <td className="px-3 py-3 cursor-pointer" onClick={() => window.location.href = `/bookings/${booking._id}`}><span className={`badge ${STATUS_STYLES[booking.status]}`}>{booking.status}</span></td>
+                {onVerifyPayment && (
+                  <td className="px-3 py-3">
+                    {booking.paymentVerification?.status === 'submitted' ? (
+                      <div className="flex gap-2">
+                        <button onClick={() => onVerifyPayment(booking._id, true)} className="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 text-xs font-semibold">Verify</button>
+                        <button onClick={() => onVerifyPayment(booking._id, false)} className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold">Reject</button>
+                      </div>
+                    ) : (
+                      <Link to={`/bookings/${booking._id}`} className="text-xs text-primary-400">Open</Link>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -377,6 +399,12 @@ export function AdminDashboard() {
     toast.success(approved ? 'Car approved' : 'Car unapproved');
   };
 
+  const verifyPayment = async (bookingId: string, approved: boolean) => {
+    await adminAPI.verifyManualPayment(bookingId, approved);
+    toast.success(approved ? 'Payment verified and booking confirmed' : 'Payment rejected');
+    loadAdmin();
+  };
+
   if (isLoading) return <PageLoader />;
 
   return (
@@ -436,7 +464,7 @@ export function AdminDashboard() {
                 {cars.map(car => <CarRow key={car._id} car={car} onApprove={approveCar} />)}
               </div>
             </div>
-            <BookingTable bookings={bookings} title="Latest Bookings" />
+            <BookingTable bookings={bookings} title="Latest Bookings" onVerifyPayment={verifyPayment} />
           </div>
         </div>
       </div>

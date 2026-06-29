@@ -4,6 +4,7 @@ const User = require('../models/User');
 const { sendEmail } = require('../services/emailService');
 const { createAuditLog } = require('../services/auditService');
 const logger = require('../utils/logger');
+const { calculateRentalPrice, findBookingConflict } = require('../utils/rentalRules');
 
 exports.createBooking = async (req, res, next) => {
   try {
@@ -16,37 +17,18 @@ exports.createBooking = async (req, res, next) => {
     }
 
     // Check for conflicts
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const pricing = calculateRentalPrice(startDate, endDate, car.pricePerDay);
+    const { start, end, totalDays, subtotal, taxes, totalAmount } = pricing;
 
     if (start < new Date()) {
       return res.status(400).json({ error: 'Start date cannot be in the past' });
     }
 
-  const conflict = await Booking.findOne({
-  car: carId,
-  status: { $in: ['confirmed', 'active', 'pending'] },
-  startDate: { $lt: end },
-  endDate: { $gt: start },
-});
+  const conflict = await findBookingConflict({ carId, startDate: start, endDate: end });
 
 if (conflict) {
   return res.status(409).json({ error: 'Car is already booked for selected dates' });
 }
-
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const totalDays = Math.ceil((end - start) / msPerDay);
-    
-    // Dynamic Pricing Engine
-    let priceModifier = 1;
-    const isWeekend = start.getDay() === 0 || start.getDay() === 6 || end.getDay() === 0 || end.getDay() === 6;
-    if (isWeekend) priceModifier += 0.15;
-    if (totalDays >= 7) priceModifier -= 0.10;
-
-    const baseSubtotal = totalDays * car.pricePerDay;
-    const subtotal = Math.round(baseSubtotal * priceModifier);
-    const taxes = Math.round(subtotal * 0.18);
-    const totalAmount = subtotal + taxes;
 
     const booking = await Booking.create({
       user: req.user.id,
@@ -75,7 +57,6 @@ if (conflict) {
 
     // Add booked dates to car
     await Car.findByIdAndUpdate(carId, {
-      isAvailable: false,
       $push: {
         bookedDates: { startDate: start, endDate: end, bookingId: booking._id },
       },
@@ -86,8 +67,10 @@ if (conflict) {
     // Notify all users that car is now unavailable
     io.emit('car_availability_changed', {
       carId,
-      isAvailable: false,
-      message: `Car just got booked`,
+      isAvailable: car.isAvailable,
+      startDate: start,
+      endDate: end,
+      message: `Car has a new booked date range`,
     });
 
     // Notify the car owner
@@ -211,14 +194,13 @@ await createAuditLog({
 });
 
     await Car.findByIdAndUpdate(booking.car._id, {
-      isAvailable: true,
       $pull: { bookedDates: { bookingId: booking._id } },
     });
 
     const io = req.app.get('io');
     io.emit('car_availability_changed', {
       carId: booking.car._id,
-      isAvailable: true,
+      isAvailable: booking.car.isAvailable,
       message: 'Car became available',
     });
 
@@ -285,8 +267,20 @@ exports.updateBookingStatus = async (req, res, next) => {
       return res.status(400).json({ error: `Cannot transition from ${booking.status} to ${status}` });
     }
 
+    const previousStatus = booking.status;
     booking.status = status;
     await booking.save();
+
+    if (['rejected', 'cancelled'].includes(status)) {
+      await Car.findByIdAndUpdate(booking.car._id, {
+        $pull: { bookedDates: { bookingId: booking._id } },
+      });
+      req.app.get('io').emit('car_availability_changed', {
+        carId: booking.car._id,
+        isAvailable: booking.car.isAvailable,
+        message: 'Booking dates were released',
+      });
+    }
 
     await createAuditLog({
       userId: req.user.id,
@@ -295,7 +289,7 @@ exports.updateBookingStatus = async (req, res, next) => {
       resourceId: booking._id.toString(),
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
-      metadata: { oldStatus: booking.status, newStatus: status },
+      metadata: { oldStatus: previousStatus, newStatus: status },
     });
 
     const io = req.app.get('io');
@@ -347,3 +341,56 @@ exports.addReview = async (req, res, next) => {
 };
 
 exports.getBookingMessages = async (req, res, next) => { try { const Message = require('../models/Message'); const messages = await Message.find({ booking: req.params.id }).sort('createdAt'); res.status(200).json({ success: true, count: messages.length, data: messages }); } catch (error) { next(error); } };
+
+exports.recordHandover = async (req, res, next) => {
+  try {
+    const { type } = req.params;
+    if (!['check-in', 'check-out'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid handover type' });
+    }
+
+    const booking = await Booking.findById(req.params.id).populate('car');
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    const isBookingUser = booking.user.toString() === req.user.id;
+    const isCarOwner = booking.car.owner.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    if (!isBookingUser && !isCarOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Not authorized to update this handover' });
+    }
+
+    const payload = {
+      completedAt: new Date(),
+      completedBy: req.user.id,
+      odometer: req.body.odometer,
+      fuelOrBattery: req.body.fuelOrBattery,
+      notes: req.body.notes,
+      photos: Array.isArray(req.body.photos) ? req.body.photos : [],
+    };
+
+    booking.handover = booking.handover || {};
+    if (type === 'check-in') {
+      booking.handover.checkIn = payload;
+      if (booking.status === 'confirmed') booking.status = 'active';
+    } else {
+      booking.handover.checkOut = payload;
+      if (booking.status === 'active') booking.status = 'completed';
+    }
+
+    await booking.save();
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: type === 'check-in' ? 'BOOKING_CHECK_IN' : 'BOOKING_CHECK_OUT',
+      resource: 'Booking',
+      resourceId: booking._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { odometer: payload.odometer, fuelOrBattery: payload.fuelOrBattery },
+    });
+
+    res.json({ success: true, booking });
+  } catch (error) {
+    next(error);
+  }
+};

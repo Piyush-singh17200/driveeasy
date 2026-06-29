@@ -33,6 +33,7 @@ export default function BookingDetail() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [handoverForm, setHandoverForm] = useState({ odometer: '', fuelOrBattery: '', notes: '', photos: '' });
 
   useEffect(() => {
     if (!id) return;
@@ -128,6 +129,20 @@ export default function BookingDetail() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const submitHandover = async (type: 'check-in' | 'check-out') => {
+    if (!id) return;
+    const photos = handoverForm.photos.split('\n').map(p => p.trim()).filter(Boolean);
+    const res = await bookingsAPI.recordHandover(id, type, {
+      odometer: handoverForm.odometer ? Number(handoverForm.odometer) : undefined,
+      fuelOrBattery: handoverForm.fuelOrBattery ? Number(handoverForm.fuelOrBattery) : undefined,
+      notes: handoverForm.notes,
+      photos,
+    });
+    setBooking(res.data.booking);
+    setHandoverForm({ odometer: '', fuelOrBattery: '', notes: '', photos: '' });
+    toast.success(type === 'check-in' ? 'Check-in recorded' : 'Check-out recorded');
   };
 
   if (isLoading) return (
@@ -310,6 +325,26 @@ export default function BookingDetail() {
               </button>
             )}
           </div>
+
+          {((isOwner || isAdmin || isCustomer) && ['confirmed', 'active'].includes(booking.status)) && (
+            <div className="card p-5">
+              <h3 className="font-semibold text-white mb-3">Contactless Handover</h3>
+              <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                <input className="input text-sm" placeholder="Odometer reading" value={handoverForm.odometer} onChange={e => setHandoverForm(f => ({ ...f, odometer: e.target.value.replace(/\D/g, '') }))} />
+                <input className="input text-sm" placeholder="Fuel/Battery %" value={handoverForm.fuelOrBattery} onChange={e => setHandoverForm(f => ({ ...f, fuelOrBattery: e.target.value.replace(/\D/g, '') }))} />
+              </div>
+              <textarea className="input resize-none text-sm mb-3" rows={2} placeholder="Condition notes" value={handoverForm.notes} onChange={e => setHandoverForm(f => ({ ...f, notes: e.target.value }))} />
+              <textarea className="input resize-none text-sm mb-3" rows={2} placeholder="Photo URLs, one per line" value={handoverForm.photos} onChange={e => setHandoverForm(f => ({ ...f, photos: e.target.value }))} />
+              <div className="flex gap-2">
+                {booking.status === 'confirmed' && (
+                  <button onClick={() => submitHandover('check-in')} className="btn-primary flex-1 justify-center text-sm py-2.5">Record Check-in</button>
+                )}
+                {booking.status === 'active' && (
+                  <button onClick={() => submitHandover('check-out')} className="btn-primary flex-1 justify-center text-sm py-2.5">Record Check-out</button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Real-time Chat Section */}
           <div className="card overflow-hidden">

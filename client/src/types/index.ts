@@ -21,6 +21,13 @@ export interface User {
     maxBudget?: number;
     locations?: string[];
   };
+  kyc?: {
+    status: 'not_started' | 'submitted' | 'verified' | 'rejected';
+    licenseNumber?: string;
+    licenseExpiry?: string;
+    verifiedAt?: string;
+    notes?: string;
+  };
   notifications?: Notification[];
   createdAt: string;
   lastLogin?: string;
@@ -65,6 +72,28 @@ export interface Car {
   isApproved: boolean;
   rating: { average: number; count: number };
   mileage?: string;
+  verification?: {
+    status: 'pending' | 'verified' | 'rejected';
+    inspectedAt?: string;
+    inspectionNotes?: string;
+  };
+  deliveryOptions?: {
+    pickup: boolean;
+    doorstep: boolean;
+    airport: boolean;
+    doorstepFee: number;
+  };
+  evDetails?: {
+    rangeKm?: number;
+    chargerType?: string;
+    chargingIncluded?: boolean;
+  };
+  telematics?: {
+    deviceId?: string;
+    lastKnownOdometer?: number;
+    lastKnownFuelOrBattery?: number;
+    lastSeenAt?: string;
+  };
   views: number;
   createdAt: string;
 }
@@ -85,9 +114,23 @@ export interface Booking {
   status: BookingStatus;
   paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
   paymentId?: string;
+  paymentVerification?: {
+    method?: 'UPI' | 'STRIPE' | 'CASH';
+    utrNumber?: string;
+    status: 'not_submitted' | 'submitted' | 'verified' | 'rejected';
+    submittedAt?: string;
+    verifiedAt?: string;
+    notes?: string;
+  };
   pickupLocation?: { address?: string; city?: string };
   dropoffLocation?: { address?: string; city?: string };
   specialRequests?: string;
+  insurancePlan?: 'basic' | 'plus' | 'premium';
+  deliveryOption?: 'pickup' | 'doorstep' | 'airport';
+  handover?: {
+    checkIn?: HandoverRecord;
+    checkOut?: HandoverRecord;
+  };
   cancellationReason?: string;
   review?: {
     rating: number;
@@ -98,6 +141,15 @@ export interface Booking {
 }
 
 export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'rejected';
+
+export interface HandoverRecord {
+  completedAt?: string;
+  completedBy?: User | string;
+  odometer?: number;
+  fuelOrBattery?: number;
+  notes?: string;
+  photos?: string[];
+}
 
 export interface Payment {
   id: string;

@@ -38,6 +38,7 @@ export default function CarDetail() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
+  const [isDateRangeAvailable, setIsDateRangeAvailable] = useState(true);
   const [specialRequests, setSpecialRequests] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState('');
@@ -53,11 +54,29 @@ export default function CarDetail() {
     const unsubscribe = onCarAvailabilityChange(({ carId, isAvailable: avail }) => {
       if (carId === id) {
         setIsAvailable(avail);
-        if (!avail) toast('⚡ This car was just booked by someone else!', { icon: '🔴' });
+        if (startDate && endDate) {
+          carsAPI.checkAvailability({
+            carId: id,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }).then(res => setIsDateRangeAvailable(res.data.available)).catch(() => {});
+        }
       }
     });
     return () => { unwatchCar(id); unsubscribe(); };
-  }, [id]);
+  }, [id, startDate, endDate]);
+
+  useEffect(() => {
+    if (!id || !startDate || !endDate) {
+      setIsDateRangeAvailable(true);
+      return;
+    }
+    carsAPI.checkAvailability({
+      carId: id,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    }).then(res => setIsDateRangeAvailable(res.data.available)).catch(() => setIsDateRangeAvailable(false));
+  }, [id, startDate, endDate]);
 
   const totalDays = startDate && endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000) : 0;
   
@@ -85,6 +104,7 @@ export default function CarDetail() {
   if (!isAuthenticated) return navigate('/login');
   if (!startDate || !endDate) return toast.error('Please select booking dates');
   if (!isAvailable) return toast.error('Car is not available');
+  if (!isDateRangeAvailable) return toast.error('Car is already booked for selected dates');
 
   setIsBooking(true);
   try {
@@ -100,7 +120,7 @@ export default function CarDetail() {
     });
     setCurrentBookingId(res.data.booking._id);
     setBookingAmount(total);
-    setIsAvailable(false);
+    setIsDateRangeAvailable(false);
     setShowPayment(true);
   } catch (err: any) {
     toast.error(err.response?.data?.error || 'Booking failed');
@@ -155,7 +175,7 @@ export default function CarDetail() {
                   isAvailable ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
                 }`}>
                   {isAvailable ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  {isAvailable ? 'Available' : 'Not Available'}
+                  {isAvailable ? 'Listed' : 'Not Available'}
                 </div>
 
                 <div className="absolute top-4 right-4 flex gap-2">
@@ -362,11 +382,11 @@ export default function CarDetail() {
 
                 <button
                   onClick={handleBook}
-                  disabled={isBooking || !isAvailable || !startDate || !endDate}
+                  disabled={isBooking || !isAvailable || !isDateRangeAvailable || !startDate || !endDate}
                   className="btn-primary w-full justify-center py-4 text-base disabled:opacity-50"
                 >
                   {isBooking ? <><Loader2 className="w-5 h-5 animate-spin" /> Booking...</> :
-                    !isAvailable ? 'Not Available' : 'Book Now'}
+                    !isAvailable ? 'Not Available' : !isDateRangeAvailable ? 'Dates Unavailable' : 'Book Now'}
                 </button>
 
                 {!isAuthenticated && (

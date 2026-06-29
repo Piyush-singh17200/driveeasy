@@ -63,6 +63,13 @@ const userSchema = new mongoose.Schema({
     maxBudget: Number,
     locations: [String],
   },
+  kyc: {
+    status: { type: String, enum: ['not_started', 'submitted', 'verified', 'rejected'], default: 'not_started' },
+    licenseNumber: String,
+    licenseExpiry: Date,
+    verifiedAt: Date,
+    notes: String,
+  },
   notifications: [{
     message: String,
     type: { type: String, enum: ['booking', 'payment', 'system', 'promotion'] },

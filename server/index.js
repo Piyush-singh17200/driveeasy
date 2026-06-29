@@ -13,6 +13,7 @@ const connectMongoDB = require('./config/mongodb');
 const { connectPostgres } = require('./config/postgres');
 const logger = require('./utils/logger');
 const socketHandler = require('./services/socketService');
+const { stripeWebhook } = require('./controllers/paymentController');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -29,9 +30,9 @@ const server = http.createServer(app);
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || process.env.CLIENT_URL || 'http://localhost:5173',
     methods: ['GET', 'POST'],
-    credentials: false,
+    credentials: true,
   },
 });
 
@@ -52,12 +53,21 @@ app.use((req, res, next) => {
   next();
 });
 app.use(compression());
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()).filter(Boolean)
+  || [process.env.CLIENT_URL || 'http://localhost:5173'];
 app.use(cors({
-  origin: '*',
-  credentials: false,
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
 }));
+
+// Stripe webhooks must receive the raw body before JSON parsing mutates req.body.
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());

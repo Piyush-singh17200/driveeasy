@@ -1,4 +1,4 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const { prisma } = require('../config/postgres');
 const Booking = require('../models/Booking');
 const logger = require('../utils/logger');
@@ -6,6 +6,9 @@ const logger = require('../utils/logger');
 exports.createPaymentIntent = async (req, res, next) => {
   try {
     const { bookingId } = req.body;
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe payments are not configured' });
+    }
 
     const booking = await Booking.findById(bookingId).populate('car', 'name brand model');
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -54,6 +57,9 @@ exports.createPaymentIntent = async (req, res, next) => {
 exports.confirmPayment = async (req, res, next) => {
   try {
     const { paymentIntentId, bookingId } = req.body;
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe payments are not configured' });
+    }
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -115,7 +121,7 @@ exports.confirmUpiPayment = async (req, res, next) => {
     await prisma.payment.upsert({
       where: { bookingId: booking._id.toString() },
       update: {
-        status: 'COMPLETED',
+        status: 'PROCESSING',
         method: 'UPI',
         metadata: { utrNumber },
       },
@@ -124,34 +130,30 @@ exports.confirmUpiPayment = async (req, res, next) => {
         userId: req.user.id,
         amount: booking.totalAmount,
         currency: 'INR',
-        status: 'COMPLETED',
+        status: 'PROCESSING',
         method: 'UPI',
         metadata: { utrNumber },
       },
     });
 
-    await prisma.transaction.create({
-      data: {
-        paymentId: booking._id.toString(),
-        type: 'PAYMENT',
-        amount: booking.totalAmount,
-        description: `UPI payment for booking ${booking._id}`,
-        metadata: { utrNumber },
-      },
-    });
-
-    booking.paymentStatus = 'paid';
     booking.paymentId = utrNumber;
-    booking.status = 'confirmed';
+    booking.paymentVerification = {
+      method: 'UPI',
+      utrNumber,
+      status: 'submitted',
+      submittedAt: new Date(),
+    };
     await booking.save();
 
     const io = req.app.get('io');
-    io.to(`user_${req.user.id}`).emit('payment_success', {
+    io.to('admin-room').emit('manual_payment_submitted', {
       bookingId,
-      message: 'Payment successful! Your booking is confirmed.',
+      amount: booking.totalAmount,
+      utrNumber,
+      message: 'A UPI payment needs admin verification.',
     });
 
-    res.json({ success: true, booking, message: 'UPI payment confirmed successfully' });
+    res.json({ success: true, booking, message: 'UPI payment submitted for admin verification' });
   } catch (error) {
     next(error);
   }
@@ -172,6 +174,9 @@ exports.getPaymentHistory = async (req, res, next) => {
 exports.stripeWebhook = async (req, res, next) => {
   const sig = req.headers['stripe-signature'];
   let event;
+  if (!stripe) {
+    return res.status(503).json({ error: 'Stripe webhooks are not configured' });
+  }
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);

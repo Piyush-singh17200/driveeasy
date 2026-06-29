@@ -195,8 +195,8 @@ export default function PaymentModal({ isOpen, onClose, onSuccess, amount, booki
                 className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-10 h-10 text-green-400" />
               </motion.div>
-              <h3 className="font-display text-2xl font-bold text-white mb-2">Payment Successful!</h3>
-              <p className="text-white/50 mb-2">Your booking is now confirmed</p>
+              <h3 className="font-display text-2xl font-bold text-white mb-2">Payment Submitted</h3>
+              <p className="text-white/50 mb-2">Admin will verify your UPI payment before confirmation</p>
               <p className="text-primary-400 font-bold text-xl">₹{amount.toLocaleString()}</p>
               <p className="text-xs text-white/30 mt-2">Redirecting to your booking...</p>
             </div>

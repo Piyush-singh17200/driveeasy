@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const {
   createBooking, getBookings, getBooking, cancelBooking,
-  getOwnerBookings, updateBookingStatus, addReview, getBookingMessages
+  getOwnerBookings, updateBookingStatus, addReview, getBookingMessages, recordHandover
 } = require('../controllers/bookingController');
 const { bookingValidator } = require('../middleware/validators');
 
@@ -15,5 +15,6 @@ router.put('/:id/cancel', protect, cancelBooking);
 router.put('/:id/status', protect, authorize('owner', 'admin'), updateBookingStatus);
 router.post('/:id/review', protect, addReview);
 router.get('/:id/messages', protect, getBookingMessages);
+router.post('/:id/:type(check-in|check-out)', protect, recordHandover);
 
 module.exports = router;

@@ -11,6 +11,13 @@ const generateToken = (id) => {
   });
 };
 
+const demoOtpPayload = (otp) => {
+  if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEMO_OTPS === 'true') {
+    return { developmentOtp: otp };
+  }
+  return {};
+};
+
 const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
   const options = {
@@ -88,7 +95,7 @@ if (phone && !/^[6-9]\d{9}$/.test(phone)) {
       message: 'Account created successfully. OTP sent to your email.',
       requiresOTP: true,
       email: user.email,
-      developmentOtp: otp
+      ...demoOtpPayload(otp),
     });
   } catch (error) {
     next(error);
@@ -142,7 +149,7 @@ exports.login = async (req, res, next) => {
       message: 'OTP sent to your email. Please verify to continue.',
       requiresOTP: true,
       email: user.email,
-      developmentOtp: otp
+      ...demoOtpPayload(otp),
     });
   } catch (error) {
     next(error);
@@ -274,7 +281,7 @@ exports.forgotPassword = async (req, res, next) => {
     res.json({ 
       success: true, 
       message: 'If that email is registered, a password reset OTP has been sent.',
-      developmentOtp: otp
+      ...demoOtpPayload(otp),
     });
   } catch (error) {
     next(error);

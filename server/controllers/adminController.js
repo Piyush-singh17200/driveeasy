@@ -205,3 +205,62 @@ exports.getAllBookings = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.verifyManualPayment = async (req, res, next) => {
+  try {
+    const { approved, notes } = req.body;
+    const booking = await Booking.findById(req.params.bookingId)
+      .populate('user', 'name email')
+      .populate('car', 'brand model');
+
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (booking.paymentVerification?.status !== 'submitted') {
+      return res.status(400).json({ error: 'No submitted manual payment is waiting for verification' });
+    }
+
+    booking.paymentVerification.status = approved ? 'verified' : 'rejected';
+    booking.paymentVerification.verifiedAt = new Date();
+    booking.paymentVerification.verifiedBy = req.user.id;
+    booking.paymentVerification.notes = notes;
+    booking.paymentStatus = approved ? 'paid' : 'failed';
+    booking.status = approved ? 'confirmed' : booking.status;
+    await booking.save();
+
+    await prisma.payment.update({
+      where: { bookingId: booking._id.toString() },
+      data: { status: approved ? 'COMPLETED' : 'FAILED', metadata: { utrNumber: booking.paymentId, notes } },
+    }).catch(() => null);
+
+    if (approved) {
+      await prisma.transaction.create({
+        data: {
+          paymentId: booking._id.toString(),
+          type: 'PAYMENT',
+          amount: booking.totalAmount,
+          description: `Verified UPI payment for booking ${booking._id}`,
+          metadata: { utrNumber: booking.paymentId },
+        },
+      }).catch(() => null);
+    }
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: approved ? 'VERIFY_MANUAL_PAYMENT' : 'REJECT_MANUAL_PAYMENT',
+      resource: 'Booking',
+      resourceId: booking._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: { approved, notes },
+    });
+
+    req.app.get('io').to(`user_${booking.user._id}`).emit('payment_verification_updated', {
+      bookingId: booking._id,
+      approved,
+      message: approved ? 'Your payment was verified and booking confirmed.' : 'Your payment verification was rejected.',
+    });
+
+    res.json({ success: true, booking });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,6 +1,10 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret_at_least_32_characters';
+process.env.ALLOW_DEMO_OTPS = 'true';
+
 const { app } = require('../index');
 const User = require('../models/User');
 
@@ -35,9 +39,9 @@ describe('Auth API', () => {
 
       expect(res.statusCode).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(res.body.user.email).toBe('test@example.com');
-      expect(res.body.token).toBeDefined();
-      expect(res.body.user.password).toBeUndefined();
+      expect(res.body.requiresOTP).toBe(true);
+      expect(res.body.email).toBe('test@example.com');
+      expect(res.body.developmentOtp).toMatch(/^\d{6}$/);
     });
 
     it('should not register with duplicate email', async () => {
@@ -80,7 +84,8 @@ describe('Auth API', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.token).toBeDefined();
+      expect(res.body.requiresOTP).toBe(true);
+      expect(res.body.developmentOtp).toMatch(/^\d{6}$/);
     });
 
     it('should reject invalid password', async () => {
@@ -107,7 +112,11 @@ describe('Auth API', () => {
         .post('/api/auth/register')
         .send({ name: 'Test User', email: 'test@example.com', password: 'password123' });
 
-      const token = registerRes.body.token;
+      const verifyRes = await request(app)
+        .post('/api/auth/verify-otp')
+        .send({ email: 'test@example.com', otp: registerRes.body.developmentOtp });
+
+      const token = verifyRes.body.token;
 
       const res = await request(app)
         .get('/api/auth/me')

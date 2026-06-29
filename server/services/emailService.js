@@ -84,6 +84,11 @@ const templates = {
 
 exports.sendEmail = async ({ to, subject, template, data }) => {
   try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      logger.warn(`Email skipped for ${to}: EMAIL_USER/EMAIL_PASS not configured`);
+      return;
+    }
+
     const templateData = templates[template]?.(data) || { subject, html: `<p>${data?.message || ''}</p>` };
 
     await transporter.sendMail({

@@ -50,6 +50,18 @@ const bookingSchema = new mongoose.Schema({
     default: 'pending',
   },
   paymentId: String,
+  paymentVerification: {
+    method: { type: String, enum: ['UPI', 'STRIPE', 'CASH'] },
+    utrNumber: String,
+    status: { type: String, enum: ['not_submitted', 'submitted', 'verified', 'rejected'], default: 'not_submitted' },
+    submittedAt: Date,
+    verifiedAt: Date,
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    notes: String,
+  },
   pickupLocation: {
     address: String,
     city: String,
@@ -63,6 +75,34 @@ const bookingSchema = new mongoose.Schema({
     city: String,
   },
   specialRequests: String,
+  insurancePlan: {
+    type: String,
+    enum: ['basic', 'plus', 'premium'],
+    default: 'basic',
+  },
+  deliveryOption: {
+    type: String,
+    enum: ['pickup', 'doorstep', 'airport'],
+    default: 'pickup',
+  },
+  handover: {
+    checkIn: {
+      completedAt: Date,
+      completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      odometer: Number,
+      fuelOrBattery: Number,
+      notes: String,
+      photos: [String],
+    },
+    checkOut: {
+      completedAt: Date,
+      completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      odometer: Number,
+      fuelOrBattery: Number,
+      notes: String,
+      photos: [String],
+    },
+  },
   driverLicense: {
     number: String,
     expiryDate: Date,

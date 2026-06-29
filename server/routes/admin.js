@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const {
   getDashboardStats, getAllUsers, updateUser,
-  getAllCars, approveCar, getAllBookings
+  getAllCars, approveCar, getAllBookings, verifyManualPayment
 } = require('../controllers/adminController');
 
 router.use(protect, authorize('admin'));
@@ -13,5 +13,6 @@ router.put('/users/:id', updateUser);
 router.get('/cars', getAllCars);
 router.put('/cars/:id/approve', approveCar);
 router.get('/bookings', getAllBookings);
+router.put('/payments/:bookingId/verify', verifyManualPayment);
 
 module.exports = router;

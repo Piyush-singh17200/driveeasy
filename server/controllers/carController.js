@@ -3,6 +3,7 @@ const Booking = require('../models/Booking');
 const { uploadImage, deleteImage } = require('../services/cloudinaryService');
 const { createAuditLog } = require('../services/auditService');
 const logger = require('../utils/logger');
+const { findBookingConflict, findConflictingCarIds } = require('../utils/rentalRules');
 
 const normalizeCarData = (body) => {
   const data = { ...body };
@@ -34,7 +35,7 @@ exports.getCars = async (req, res, next) => {
   try {
     const {
       city, category, minPrice, maxPrice, fuel, transmission, seats,
-      available, sortBy, order, page = 1, limit = 12, search,
+      available, sortBy, order, page = 1, limit = 12, search, startDate, endDate,
     } = req.query;
 
     const query = { isApproved: true };
@@ -45,6 +46,11 @@ exports.getCars = async (req, res, next) => {
     if (transmission) query.transmission = transmission;
     if (seats) query.seats = { $gte: parseInt(seats) };
     if (available !== undefined) query.isAvailable = available === 'true';
+    if (startDate && endDate) {
+      const conflictingCarIds = await findConflictingCarIds({ startDate, endDate });
+      query._id = { $nin: conflictingCarIds };
+      query.isAvailable = true;
+    }
     if (minPrice || maxPrice) {
       query.pricePerDay = {};
       if (minPrice) query.pricePerDay.$gte = parseInt(minPrice);
@@ -266,13 +272,7 @@ exports.checkAvailability = async (req, res, next) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    const conflictingBooking = await Booking.findOne({
-      car: carId,
-      status: { $in: ['confirmed', 'active'] },
-      $or: [
-        { startDate: { $lte: end }, endDate: { $gte: start } },
-      ],
-    });
+    const conflictingBooking = await findBookingConflict({ carId, startDate: start, endDate: end });
 
     res.json({
       success: true,

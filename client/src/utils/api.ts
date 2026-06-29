@@ -72,6 +72,7 @@ export const bookingsAPI = {
   updateBookingStatus: (id: string, status: string) => api.put(`/bookings/${id}/status`, { status }),
   addReview: (id: string, data: any) => api.post(`/bookings/${id}/review`, data),
   getBookingMessages: (id: string) => api.get(`/bookings/${id}/messages`),
+  recordHandover: (id: string, type: 'check-in' | 'check-out', data: any) => api.post(`/bookings/${id}/${type}`, data),
 };
 
 // ─── Payments API ──────────────────────────────────────────────────────────────
@@ -90,6 +91,8 @@ export const adminAPI = {
   getCars: (params?: any) => api.get('/admin/cars', { params }),
   approveCar: (id: string, approved: boolean) => api.put(`/admin/cars/${id}/approve`, { approved }),
   getBookings: (params?: any) => api.get('/admin/bookings', { params }),
+  verifyManualPayment: (bookingId: string, approved: boolean, notes?: string) =>
+    api.put(`/admin/payments/${bookingId}/verify`, { approved, notes }),
 };
 
 // ─── AI API ───────────────────────────────────────────────────────────────────

@@ -100,6 +100,28 @@ const carSchema = new mongoose.Schema({
     policyNumber: String,
     expiryDate: Date,
   },
+  verification: {
+    status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+    inspectedAt: Date,
+    inspectionNotes: String,
+  },
+  deliveryOptions: {
+    pickup: { type: Boolean, default: true },
+    doorstep: { type: Boolean, default: false },
+    airport: { type: Boolean, default: false },
+    doorstepFee: { type: Number, default: 0 },
+  },
+  evDetails: {
+    rangeKm: Number,
+    chargerType: String,
+    chargingIncluded: { type: Boolean, default: false },
+  },
+  telematics: {
+    deviceId: String,
+    lastKnownOdometer: Number,
+    lastKnownFuelOrBattery: Number,
+    lastSeenAt: Date,
+  },
   views: { type: Number, default: 0 },
 }, {
   timestamps: true,
