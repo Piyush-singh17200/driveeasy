@@ -110,24 +110,28 @@ socketHandler(io);
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
+  server.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🚀 Server running on port ${PORT}`);
+    logger.info(`📡 Socket.io ready`);
+    logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`❌ Port ${PORT} is already in use. Please kill the process or use a different port.`);
+      process.exit(1);
+    } else {
+      logger.error('Server error:', err);
+    }
+  });
+
   try {
-    await connectMongoDB();
+    const mongoReady = await connectMongoDB();
+    if (!mongoReady) {
+      logger.warn('Continuing startup without MongoDB. Some API features may be unavailable.');
+    }
+
     await connectPostgres();
-    server.listen(PORT, '0.0.0.0', () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
-      logger.info(`📡 Socket.io ready`);
-      logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    }).on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        logger.error(`❌ Port ${PORT} is already in use. Please kill the process or use a different port.`);
-        process.exit(1);
-      } else {
-        logger.error('Server error:', err);
-      }
-    });
   } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+    logger.error('Startup initialization warning:', error);
   }
 }
 

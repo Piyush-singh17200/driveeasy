@@ -2,15 +2,20 @@ const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 const connectMongoDB = async () => {
+  if (!process.env.MONGODB_URI) {
+    logger.warn('MongoDB connection skipped - MONGODB_URI not set');
+    return false;
+  }
+
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
     });
     logger.info(`✅ MongoDB connected: ${conn.connection.host}`);
+    return true;
   } catch (error) {
     logger.error(`❌ MongoDB connection error: ${error.message}`);
-    throw error;
+    return false;
   }
 };
 
