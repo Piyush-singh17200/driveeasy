@@ -2,13 +2,14 @@ const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 const connectMongoDB = async () => {
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carrental';
+
   if (!process.env.MONGODB_URI) {
-    logger.warn('MongoDB connection skipped - MONGODB_URI not set');
-    return false;
+    logger.warn(`MongoDB connection falling back to local database: ${mongoUri}`);
   }
 
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const conn = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,
     });
     logger.info(`✅ MongoDB connected: ${conn.connection.host}`);

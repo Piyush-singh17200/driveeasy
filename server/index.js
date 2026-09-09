@@ -14,6 +14,7 @@ const { connectPostgres } = require('./config/postgres');
 const logger = require('./utils/logger');
 const socketHandler = require('./services/socketService');
 const { stripeWebhook } = require('./controllers/paymentController');
+const ensureDemoData = require('./utils/ensureDemoData');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -110,11 +111,13 @@ socketHandler(io);
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
-  server.listen(PORT, '0.0.0.0', () => {
+  const listenServer = server.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 Server running on port ${PORT}`);
     logger.info(`📡 Socket.io ready`);
     logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  }).on('error', (err) => {
+  });
+
+  listenServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(`❌ Port ${PORT} is already in use. Please kill the process or use a different port.`);
       process.exit(1);
@@ -127,9 +130,11 @@ async function startServer() {
     const mongoReady = await connectMongoDB();
     if (!mongoReady) {
       logger.warn('Continuing startup without MongoDB. Some API features may be unavailable.');
+      return;
     }
 
     await connectPostgres();
+    await ensureDemoData();
   } catch (error) {
     logger.error('Startup initialization warning:', error);
   }

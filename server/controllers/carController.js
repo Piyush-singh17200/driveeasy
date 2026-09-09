@@ -1,4 +1,5 @@
 const Car = require('../models/Car');
+const User = require('../models/User');
 const Booking = require('../models/Booking');
 const { uploadImage, deleteImage } = require('../services/cloudinaryService');
 const { createAuditLog } = require('../services/auditService');
@@ -72,14 +73,23 @@ exports.getCars = async (req, res, next) => {
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [cars, total] = await Promise.all([
-      Car.find(query)
-        .populate('owner', 'name avatar rating')
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(parseInt(limit)),
-      Car.countDocuments(query),
-    ]);
+    let cars = [];
+    let total = 0;
+
+    try {
+      [cars, total] = await Promise.all([
+        Car.find(query)
+          .populate('owner', 'name avatar rating')
+          .sort(sortOptions)
+          .skip(skip)
+          .limit(parseInt(limit)),
+        Car.countDocuments(query),
+      ]);
+    } catch (dbError) {
+      logger.warn(`Car listing fallback due to DB issue: ${dbError.message}`);
+      cars = [];
+      total = 0;
+    }
 
     res.json({
       success: true,
