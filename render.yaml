@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: driveeasy-api
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        value: mongodb+srv://admin:DriveEasy2024@cluster0.2gvugzs.mongodb.net/carrental?retryWrites=true&w=majority&appName=Cluster0
+      - key: JWT_SECRET
+        value: driveeasy_super_secret_jwt_key_piyush_2024_xyz
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: CLIENT_URL
+        value: https://driveeasy-tau.vercel.app
+      - key: ALLOWED_ORIGINS
+        value: https://driveeasy-tau.vercel.app,http://localhost:5173
